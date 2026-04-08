@@ -47,9 +47,7 @@ export async function queryDeviceRegisterInfo(deviceName: string) {
   return res.json();
 }
 
-export async function getDeviceDetail(deviceName: string) {
-  const token = localStorage.getItem("access_token");
-
+export async function getDeviceDetail(deviceName: string, token: string) {
   const params = new URLSearchParams({
     deviceName: deviceName,
     access_token: token || "",
@@ -73,9 +71,8 @@ export async function getDeviceData(
   endTime: number,
   currentPage: number = 1,
   pageSize: number = 10,
+  token: string,
 ) {
-  const token = localStorage.getItem("access_token");
-
   const params = new URLSearchParams({
     currentPage: currentPage.toString(),
     pageSize: pageSize.toString(),

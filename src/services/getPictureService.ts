@@ -2,9 +2,8 @@ export async function getPictures(
   deviceName: string,
   currentPage: number = 1,
   pageSize: number = 12, // Ubah ke 12 agar grid 6 kolom terisi rata
+  token: string,
 ) {
-  const token = localStorage.getItem("access_token");
-
   const params = new URLSearchParams({
     currentPage: currentPage.toString(),
     pageSize: pageSize.toString(),
