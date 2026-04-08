@@ -1,65 +1,194 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { loginUser } from "@/services/authService";
 import Image from "next/image";
+import background from "../../public/water_background.jpg";
+import sui from "../../public/drop.png";
+import { useRouter } from "next/navigation";
+import { isTokenExpired } from "@/utils/auth";
 
 export default function Home() {
+  const [loading, setLoading] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalMessage2, setModalMessage2] = useState("");
+
+  const [modalType, setModalType] = useState<"success" | "error" | null>(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isTokenExpired()) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("token_expire");
+
+        router.push("/");
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setLoading(true);
+
+    try {
+      const result = await loginUser({ username, password });
+      localStorage.setItem("token", result.access_token);
+      localStorage.setItem(
+        "token_expire",
+        (Date.now() + result.expires_in * 1000).toString(),
+      );
+
+      setModalType("success");
+      setModalMessage("Selamat datang kembali di WaterMeter !");
+      setModalMessage2("Anda akan segera diarahkan ke dashboard");
+      document.cookie = `token=${result.access_token}; path=/; max-age=${result.expires_in}`;
+
+      (document.getElementById("login_modal") as HTMLDialogElement).showModal();
+
+      router.push("/dashboard");
+
+      localStorage.setItem("access_token", result.access_token);
+    } catch (error) {
+      setModalType("error");
+      setModalMessage("Username atau password salah");
+
+      (document.getElementById("login_modal") as HTMLDialogElement).showModal();
+      // Handle login failure (e.g., display error message)
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+    <>
+      <div className="flex min-h-screen flex-col items-center justify-center px-6 py-12 lg:px-8 bg-sky-200">
+        <div className="flex w-full max-w-md flex-col items-center rounded-xl px-6 py-12 shadow-2xl sm:px-12 relative overflow-hidden">
+          <Image
+            src={background}
+            alt="Background Image"
+            className="absolute inset-0 h-full w-full object-fill z-0"
+          />
+          <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-sm">
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              alt="Your Company"
+              src={sui}
+              className="mx-auto h-18 w-auto"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-black/90">
+              WaterMeter | PT RSK
+            </h2>
+          </div>
+
+          <div className="relative z-10 mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* <div className="flex flex-col space-y-3">
+                <label className="input validator w-full">
+                  <svg
+                    className="h-[1em] opacity-50"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24">
+                    <g
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      strokeWidth="2.5"
+                      fill="none"
+                      stroke="currentColor">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </g>
+                  </svg>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className=" bg-white text-black/90"
+                  />
+                </label>
+
+                <label className="input validator w-full">
+                  <svg
+                    className="h-[1em] opacity-50"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24">
+                    <g
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      strokeWidth="2.5"
+                      fill="none"
+                      stroke="currentColor">
+                      <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path>
+                      <circle
+                        cx="16.5"
+                        cy="7.5"
+                        r=".5"
+                        fill="currentColor"></circle>
+                    </g>
+                  </svg>
+
+                  <input
+                    type="password"
+                    required
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className=" bg-white text-black/90"
+                  />
+                </label>
+              </div> */}
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex w-full justify-center rounded-md bg-sky-800 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-sky-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">
+                  {loading ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs"></span>
+                      Loading...
+                    </>
+                  ) : (
+                    "Masuk"
+                  )}
+                </button>
+              </div>
+            </form>
+
+            <dialog id="login_modal" className="modal">
+              <div className="modal-box">
+                <h3
+                  className={`font-bold text-lg ${
+                    modalType === "success" ? "text-green-600" : "text-red-500"
+                  }`}>
+                  {modalType === "success" ? "Login Berhasil" : "Login Gagal"}
+                </h3>
+
+                <div className="py-4 text-sm text-gray-600 space-y-1">
+                  <p>{modalMessage}</p>
+                  <p>{modalMessage2}</p>
+                </div>
+
+                <div className="modal-action">
+                  <form method="dialog">
+                    <button className="btn">OK</button>
+                  </form>
+                </div>
+              </div>
+            </dialog>
+
+            <p className="font-bold text-xs mt-5 font--geist-mono text-center text-gray-700">
+              © 2026 All rights reserved by PT. Raharja Sinergi Komunikasi
+            </p>
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }
