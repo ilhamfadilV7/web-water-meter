@@ -1,60 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import useSWR from "swr"; // <-- Tambahkan SWR
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { Signal } from "lucide-react";
+
 import { Device } from "@/types/device";
 import { getDevices } from "@/services/deviceService";
-import dynamic from "next/dynamic";
 import { getDeviceStatus } from "@/utils/deviceStatus";
 import { deviceTypes } from "@/utils/deviceType";
-import { Signal } from "lucide-react";
 import { isTokenExpired } from "@/utils/auth";
-import { useRouter } from "next/navigation";
-
 import { ChartAreaGradient } from "@/component/chart";
 import { adjustMinusOneHour } from "@/utils/date";
 
+const MapLeaflet = dynamic(() => import("@/component/MapLeaflet"), {
+  ssr: false,
+});
+
 const Dashboard = () => {
   const router = useRouter();
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [mapLoading, setMapLoading] = useState(true);
-  const [deviceLoading, setDeviceLoading] = useState(true);
-  const [onlineCount, setOnlineCount] = useState(0);
-  const [sleepCount, setSleepCount] = useState(0);
-  const [offlineCount, setOfflineCount] = useState(0);
-  const [notActiveCount, setNotActiveCount] = useState(0);
 
-  const MapLeaflet = dynamic(() => import("@/component/MapLeaflet"), {
-    ssr: false,
-  });
-
+  // 1. Pengecekan Token Auth (Tetap menggunakan useEffect karena ini butuh akses window/localStorage)
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
+    if (!token || isTokenExpired()) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("token_expire");
+      router.push("/");
+    }
+  }, [router]);
 
-        if (!token || isTokenExpired()) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("token_expire");
+  // 2. FETCH DATA DENGAN SWR
+  // Menggantikan useState(devices) dan useState(deviceLoading)
+  const { data, isLoading } = useSWR("getAllDevices", getDevices);
 
-          router.push("/");
-        }
+  // Jika data SWR belum ada, berikan array kosong sebagai default
+  const devices: Device[] = data || [];
 
-        const data = await getDevices();
-        setDevices(data);
+  // 3. DERIVED STATE (Otomatis terhitung ulang jika 'devices' berubah, tanpa perlu useState!)
+  const onlineCount = devices.filter((d) => d.deviceStatus === 1).length;
+  const sleepCount = devices.filter((d) => d.deviceStatus === 2).length;
+  const offlineCount = devices.filter((d) => d.deviceStatus === 3).length;
+  const notActiveCount = devices.filter((d) => d.deviceStatus === 4).length;
 
-        setOnlineCount(data.filter((d) => d.deviceStatus === 1).length);
-        setSleepCount(data.filter((d) => d.deviceStatus === 2).length);
-        setOfflineCount(data.filter((d) => d.deviceStatus === 3).length);
-        setNotActiveCount(data.filter((d) => d.deviceStatus === 4).length);
-      } catch (e) {
-        console.log(e);
-      }
-
-      setDeviceLoading(false);
-    };
-
-    fetchData();
-  }, []);
+  // 4. Loading UI (Opsional)
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]">
+        <span className="loading loading-spinner loading-lg text-sky-600"></span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 px-3 sm:px-0">
@@ -100,7 +97,11 @@ const Dashboard = () => {
                 value: sleepCount,
                 colorClass: "status-warning",
               },
-              { label: "Total", value: 0, colorClass: "status-neutral" },
+              {
+                label: "Total",
+                value: devices.length,
+                colorClass: "status-neutral",
+              },
             ].map((item) => (
               <div
                 key={item.label}
@@ -109,7 +110,6 @@ const Dashboard = () => {
                   <span className={`status ${item.colorClass}`}></span>
                   {item.label}
                 </div>
-
                 <span className="text-xl sm:text-2xl font-bold">
                   {item.value}
                 </span>
@@ -118,31 +118,37 @@ const Dashboard = () => {
           </div>
 
           {/* ================= DEVICE LIST ================= */}
-
           {/* ---------- MOBILE CARD LIST ---------- */}
-          <div className="sm:hidden space-y-3">
-            {devices.map((device, i) => {
+          <div className="sm:hidden space-y-3 overflow-y-auto max-h-96 pr-2">
+            {devices.map((device) => {
               const status = getDeviceStatus(device.deviceStatus);
               const dvctype = deviceTypes(device.networkType);
 
               return (
                 <div
                   key={device.id}
-                  className="p-3 rounded-lg border shadow-sm space-y-1">
-                  <div className="flex justify-between">
-                    <span className="font-semibold">{device.houseNumber}</span>
-
-                    <span className="badge badge-soft">{status.label}</span>
+                  className="p-3 rounded-lg border shadow-sm space-y-1 bg-slate-50">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">
+                      {device.houseNumber || "-"}
+                    </span>
+                    <span
+                      className={`badge badge-sm ${device.deviceStatus === 1 ? "badge-success text-white" : "badge-ghost"}`}>
+                      {status.label}
+                    </span>
                   </div>
-
                   <div className="text-sm opacity-70">
                     Tipe: {dvctype.label}
                   </div>
-
-                  <div className="text-sm">Signal: {device.signal}</div>
-
+                  <div className="text-sm flex items-center gap-1">
+                    Signal: <Signal className="w-4 h-4 text-sky-500" />{" "}
+                    {device.signal || "-"}
+                  </div>
                   <div className="text-xs opacity-60">
-                    {adjustMinusOneHour(device.lastTime)}
+                    Update:{" "}
+                    {device.lastTime
+                      ? adjustMinusOneHour(device.lastTime)
+                      : "-"}
                   </div>
                 </div>
               );
@@ -151,11 +157,11 @@ const Dashboard = () => {
 
           {/* ---------- DESKTOP TABLE ---------- */}
           <div className="hidden sm:block">
-            <div className="overflow-x-auto max-h-112 border rounded-box">
-              <table className="table table-zebra table-sm sm:table-md">
-                <thead className="sticky top-0 bg-base-200 z-10">
+            <div className="overflow-y-auto max-h-[400px] border rounded-box shadow-inner">
+              <table className="table table-zebra table-sm">
+                <thead className="sticky top-0 bg-base-200 z-10 shadow-sm">
                   <tr>
-                    <th></th>
+                    <th>No</th>
                     <th>Nama</th>
                     <th>Tipe</th>
                     <th>Status</th>
@@ -164,7 +170,6 @@ const Dashboard = () => {
                     <th>Last update</th>
                   </tr>
                 </thead>
-
                 <tbody>
                   {devices.map((device, index) => {
                     const status = getDeviceStatus(device.deviceStatus);
@@ -173,15 +178,33 @@ const Dashboard = () => {
                     return (
                       <tr key={device.id}>
                         <th>{index + 1}</th>
-                        <td>{device.houseNumber}</td>
+                        <td className="font-medium">
+                          {device.houseNumber || "-"}
+                        </td>
                         <td>{dvctype.label}</td>
-                        <td>{status.label}</td>
-                        <td>{device.signal}</td>
-                        <td>{device.batteryCapacity}</td>
-                        <td>{adjustMinusOneHour(device.lastTime)}</td>
+                        <td>
+                          <span
+                            className={`badge badge-sm ${device.deviceStatus === 1 ? "badge-success text-white" : "badge-ghost"}`}>
+                            {status.label}
+                          </span>
+                        </td>
+                        <td>{device.signal || "-"}</td>
+                        <td>{device.batteryCapacity || "-"}</td>
+                        <td className="text-xs">
+                          {device.lastTime
+                            ? adjustMinusOneHour(device.lastTime)
+                            : "-"}
+                        </td>
                       </tr>
                     );
                   })}
+                  {devices.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="text-center py-4">
+                        Tidak ada device ditemukan
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -196,43 +219,9 @@ const Dashboard = () => {
 
       {/* ================= MAP ================= */}
       <div className="bg-white p-4 sm:p-6 rounded-box shadow-sm hidden md:block">
-        <div className="h-64 sm:h-112">
+        <div className="h-64 sm:h-112 z-0 relative">
           <MapLeaflet devices={devices} />
         </div>
-      </div>
-
-      {/* ================= SECOND TABLE ================= */}
-      <div className="overflow-x-auto rounded-box border shadow-sm">
-        <table className="table table-sm sm:table-md">
-          <thead>
-            <tr>
-              <th></th>
-              <th>Name</th>
-              <th>Job</th>
-              <th>Favorite Color</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>1</th>
-              <td>Cy Ganderton</td>
-              <td>Quality Control Specialist</td>
-              <td>Blue</td>
-            </tr>
-            <tr>
-              <th>2</th>
-              <td>Hart Hagerty</td>
-              <td>Desktop Support Technician</td>
-              <td>Purple</td>
-            </tr>
-            <tr>
-              <th>3</th>
-              <td>Brice Swyre</td>
-              <td>Tax Accountant</td>
-              <td>Red</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </div>
   );

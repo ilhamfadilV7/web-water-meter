@@ -31,6 +31,12 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+
+  //   setLoading(true);
+  // };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -151,8 +157,8 @@ export default function Home() {
                   className="flex w-full justify-center rounded-md bg-sky-800 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-sky-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">
                   {loading ? (
                     <>
-                      <span className="loading loading-spinner loading-xs"></span>
-                      Loading...
+                      <span className="loading loading-bars loading-sm"></span>
+                      <span className="ml-2">Loading...</span>
                     </>
                   ) : (
                     "Masuk"
