@@ -31,12 +31,6 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-
-  //   setLoading(true);
-  // };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -45,6 +39,7 @@ export default function Home() {
     try {
       const result = await loginUser({ username, password });
       localStorage.setItem("token", result.access_token);
+      localStorage.setItem("refresh_token", result.refresh_token);
       localStorage.setItem(
         "token_expire",
         (Date.now() + result.expires_in * 1000).toString(),
@@ -57,7 +52,7 @@ export default function Home() {
 
       (document.getElementById("login_modal") as HTMLDialogElement).showModal();
 
-      router.push("/dashboard");
+      router.push("/devices");
 
       localStorage.setItem("access_token", result.access_token);
     } catch (error) {

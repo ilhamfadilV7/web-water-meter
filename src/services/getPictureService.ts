@@ -1,3 +1,5 @@
+const baseUrl = process.env.NEXT_PUBLIC_API_LYDAR;
+
 export async function getPictures(
   deviceName: string,
   currentPage: number = 1,
@@ -12,10 +14,9 @@ export async function getPictures(
     access_token: token || "",
   });
 
-  const res = await fetch(
-    `https://api.lydar.tech/manage/picture?${params.toString()}`,
-    { method: "GET" },
-  );
+  const res = await fetch(`${baseUrl}/manage/picture?${params.toString()}`, {
+    method: "GET",
+  });
 
   if (!res.ok) {
     throw new Error("Gagal menghubungi server untuk mendapatkan gambar");

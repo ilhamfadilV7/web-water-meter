@@ -240,7 +240,7 @@ export default function ClientView({
 
     // 2. FIX BUG DARI BACKEND: Tambahkan ekstra 7 Jam secara manual
     // Ini mengompensasi backend yang secara keliru telah mengurangi 7 jam sebelumnya.
-    dateObj.setHours(dateObj.getHours() + 7);
+    dateObj.setHours(dateObj.getHours());
 
     // 3. Konfigurasi format jam (Tetap kunci ke Jakarta)
     const options: Intl.DateTimeFormatOptions = {
@@ -330,10 +330,11 @@ export default function ClientView({
               <span className="text-sm font-semibold text-slate-500 mb-1">
                 Baterai
               </span>
-              <div className="flex items-center gap-1 font-bold text-sky-700">
+              <div className="flex flex-col items-center gap-1 font-bold text-sky-700">
                 <Battery className="w-5 h-5 text-green-500" />
-                <span className="text-xl">
-                  {deviceInfo.electricity || deviceInfo.batteryCapacity || "-"}%
+                <span className="text-xl">{deviceInfo.electricity}%</span>
+                <span className="text-sm">
+                  dari {deviceInfo.batteryCapacity} mAh
                 </span>
               </div>
             </div>
@@ -387,9 +388,7 @@ export default function ClientView({
                 Data terakhir diperbarui
               </span>
               <span className="text-sm font-medium text-slate-700 leading-relaxed">
-                {deviceInfo.lastTime
-                  ? adjustMinusOneHour(deviceInfo.lastTime)
-                  : "-"}
+                {adjustMinusOneHour(deviceInfo.lastTime)}
               </span>
             </div>
           </div>
@@ -566,7 +565,7 @@ export default function ClientView({
                       <span className="text-sm font-medium text-slate-700">
                         Ubah Kualitas:
                       </span>
-                      <div className="flex flex-row items-center gap-6 bg-white border border-slate-100 p-3 rounded-lg">
+                      <div className="flex flex-wrap items-center gap-4 sm:gap-6 bg-white border border-slate-100 p-3 rounded-lg">
                         <label
                           className={`flex items-center gap-2 ${currentPicQuality === 5 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"}`}>
                           <input
@@ -699,7 +698,7 @@ export default function ClientView({
               <div className="flex flex-col gap-6 w-full">
                 {/* ================= CARD 3: RIWAYAT SINKRONISASI ================= */}
                 <div className="w-full flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-                  <div className="border-b border-slate-100 pb-3 mb-4 flex justify-between items-end">
+                  <div className="border-b border-slate-100 pb-3 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                     <div>
                       <h3 className="font-semibold text-slate-800">
                         Riwayat Sinkronisasi Data
@@ -708,26 +707,30 @@ export default function ClientView({
                         Log proses penarikan data dari server ke web dinas.
                       </p>
                     </div>
-                    <button
-                      onClick={handleSyncNow}
-                      disabled={isSyncingNow || loadingSync}
-                      className="btn btn-xs btn-ghost text-sky-600 hover:bg-sky-50 disabled:bg-transparent disabled:text-sky-300">
-                      {isSyncingNow ? (
-                        <span className="loading loading-spinner loading-xs mr-1"></span>
-                      ) : (
-                        <Play size={14} className="mr-1" />
-                      )}
-                      {isSyncingNow ? "Memulai..." : "Sinkron Data"}
-                    </button>
-                    <button
-                      onClick={() => mutate(["syncLogs", deviceName])}
-                      className="btn btn-xs btn-ghost text-sky-600 hover:bg-sky-50">
-                      <RefreshCw
-                        size={14}
-                        className={loadingSync ? "animate-spin" : ""}
-                      />{" "}
-                      Refresh
-                    </button>
+
+                    {/* Bungkus KEDUA tombol di dalam satu DIV baru */}
+                    <div className="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto mt-2 sm:mt-0">
+                      <button
+                        onClick={handleSyncNow}
+                        disabled={isSyncingNow || loadingSync}
+                        className="btn btn-xs btn-ghost text-sky-600 hover:bg-sky-50 disabled:bg-transparent disabled:text-sky-300 flex-1 sm:flex-none justify-center">
+                        {isSyncingNow ? (
+                          <span className="loading loading-spinner loading-xs mr-1"></span>
+                        ) : (
+                          <Play size={14} className="mr-1" />
+                        )}
+                        {isSyncingNow ? "Memulai..." : "Sinkron Data"}
+                      </button>
+                      <button
+                        onClick={() => mutate(["syncLogs", deviceName])}
+                        className="btn btn-xs btn-ghost text-sky-600 hover:bg-sky-50 flex-1 sm:flex-none justify-center">
+                        <RefreshCw
+                          size={14}
+                          className={loadingSync ? "animate-spin" : ""}
+                        />{" "}
+                        Refresh
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-3 overflow-y-auto max-h-[300px] pr-2">

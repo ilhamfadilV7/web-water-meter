@@ -1,3 +1,5 @@
+const baseUrl = process.env.NEXT_PUBLIC_API_LYDAR;
+const urlPob = process.env.NEXT_PUBLIC_LOCAL_SERVER;
 export async function getDevices() {
   const token = localStorage.getItem("access_token");
 
@@ -8,12 +10,9 @@ export async function getDevices() {
     access_token: token || "",
   });
 
-  const res = await fetch(
-    `https://api.lydar.tech/manage/v3/device?${params.toString()}`,
-    {
-      method: "GET",
-    },
-  );
+  const res = await fetch(`${baseUrl}/manage/v3/device?${params.toString()}`, {
+    method: "GET",
+  });
 
   if (!res.ok) {
     throw new Error("Failed fetch devices");
@@ -34,7 +33,7 @@ export async function queryDeviceRegisterInfo(deviceName: string) {
   });
 
   const res = await fetch(
-    `https://api.lydar.tech/manage/queryDeviceRegisterInfo?${params.toString()}`,
+    `${baseUrl}/manage/queryDeviceRegisterInfo?${params.toString()}`,
     {
       method: "GET",
     },
@@ -54,7 +53,7 @@ export async function getDeviceDetail(deviceName: string, token: string) {
   });
 
   const resInfo = await fetch(
-    `https://api.lydar.tech/manage/v2/device/deviceName?${params.toString()}`,
+    `${baseUrl}/manage/v2/device/deviceName?${params.toString()}`,
     { method: "GET" },
   );
 
@@ -84,7 +83,7 @@ export async function getDeviceData(
   });
 
   const resData = await fetch(
-    `https://api.lydar.tech/data/v1/dataAndPic?${params.toString()}`,
+    `${baseUrl}/data/v1/dataAndPic?${params.toString()}`,
     { method: "GET" },
   );
 
@@ -102,7 +101,7 @@ export async function getDeviceConfig(deviceName: string, token: string) {
   });
 
   const resConfig = await fetch(
-    `https://api.lydar.tech/manage/deviceSet/deviceName?${params.toString()}`,
+    `${baseUrl}/manage/deviceSet/deviceName?${params.toString()}`,
     { method: "GET" },
   );
 
@@ -123,7 +122,7 @@ export async function getDeviceQWakeupInfo(deviceName: string, token: string) {
   });
 
   const resQWakeup = await fetch(
-    `https://api.lydar.tech/manage/wakeConfig/keyAndName?${params.toString()}`,
+    `${baseUrl}/manage/wakeConfig/keyAndName?${params.toString()}`,
     { method: "GET" },
   );
 
@@ -152,7 +151,7 @@ export async function updateDeviceSettings(
     recognizeMode: "1",
   });
 
-  const res = await fetch(`https://api.lydar.tech/manage/deviceSet`, {
+  const res = await fetch(`${baseUrl}/manage/deviceSet`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -185,10 +184,9 @@ export async function getDeviceLogs(
     access_token: token || "",
   });
 
-  const resLogs = await fetch(
-    `https://api.lydar.tech/data/v1/error?${params.toString()}`,
-    { method: "GET" },
-  );
+  const resLogs = await fetch(`${baseUrl}/data/v1/error?${params.toString()}`, {
+    method: "GET",
+  });
 
   if (!resLogs.ok) {
     throw new Error("Gagal menghubungi server untuk mendapatkan logs device");
@@ -198,12 +196,9 @@ export async function getDeviceLogs(
 }
 
 export async function getSyncLogs(deviceName: string) {
-  const res = await fetch(
-    `http://10.20.10.187:3130/api/wm/sync-logs/${deviceName}`,
-    {
-      method: "GET",
-    },
-  );
+  const res = await fetch(`${urlPob}/api/wm/sync-logs/${deviceName}`, {
+    method: "GET",
+  });
 
   if (!res.ok) {
     throw new Error("Gagal mengambil histori sinkronisasi");
@@ -213,7 +208,7 @@ export async function getSyncLogs(deviceName: string) {
 }
 
 export async function startSync(deviceName: string) {
-  const res = await fetch(`http://10.20.10.187:3130/api/wm/sync/device`, {
+  const res = await fetch(`${urlPob}/api/wm/sync/device`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
