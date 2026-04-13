@@ -305,7 +305,7 @@ export default function ClientView({
               </span>
               <div className="flex flex-col items-center gap-1 font-bold text-sky-700">
                 <Battery className="w-5 h-5 text-green-500" />
-                <span className="text-xl">{deviceInfo.electricity}%</span>
+                <span className="text-md">{deviceInfo.electricity}%</span>
                 <span className="text-sm">
                   dari {deviceInfo.batteryCapacity} mAh
                 </span>
@@ -315,7 +315,7 @@ export default function ClientView({
               <span className="text-sm font-semibold text-slate-500 mb-1">
                 Tipe
               </span>
-              <span className="text-2xl font-bold text-sky-700">
+              <span className="text-xl font-bold text-sky-700">
                 {networkInfo.label}
               </span>
             </div>
@@ -324,7 +324,7 @@ export default function ClientView({
                 Status
               </span>
               <span
-                className={`text-xl font-bold ${deviceInfo.deviceStatus === 1 ? "text-green-600" : "text-slate-600"}`}>
+                className={`text-md font-bold ${deviceInfo.deviceStatus === 1 ? "text-green-600" : "text-slate-600"}`}>
                 {statusInfo.label}
               </span>
             </div>

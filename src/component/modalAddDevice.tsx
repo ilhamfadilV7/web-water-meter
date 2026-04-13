@@ -1,10 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic"; // <-- Tambahkan untuk dynamic import
 import { mutate } from "swr";
 import { queryDeviceRegisterInfo } from "@/services/deviceService";
 import { deviceTypes } from "@/utils/deviceType";
-import { Loader2, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  MapPin,
+  Info,
+} from "lucide-react";
+
+// DYNAMIC IMPORT MAP (Agar tidak error "window is not defined" di Next.js)
+const MapPicker = dynamic(() => import("./MapPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-56 bg-slate-100 animate-pulse rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 text-sm">
+      Memuat Peta...
+    </div>
+  ),
+});
 
 type Props = {
   isOpen: boolean;
@@ -22,8 +40,12 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [errormsg, setErrorMsg] = useState("");
+
+  // state 1
   const [serialNumber, setSerialNumber] = useState("");
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
+
+  // state 2 & 3 form data
   const [namaWp, setNamaWp] = useState("");
   const [alamat, setAlamat] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
@@ -39,14 +61,20 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
   const [tglpasang, setTglPasang] = useState("");
   const [email, setEmail] = useState("");
   const [namadevice, setNamaDevice] = useState("");
-  const baseUrl = process.env.NEXT_PUBLIC_API_LYDAR;
-  const localDbUrl = process.env.NEXT_PUBLIC_LOCAL_SERVER;
+
+  // STATE UNTUK TOGGLE PETA
+  const [showMap, setShowMap] = useState(false);
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_LYDAR || "https://api.lydar.tech";
+  const localDbUrl =
+    process.env.NEXT_PUBLIC_LOCAL_DB || "http://10.20.10.187:3130";
+
   const [isProcessFinished, setIsProcessFinished] = useState(false);
   const [processHasError, setProcessHasError] = useState(false);
   const [processStages, setProcessStages] = useState<ProcessStage[]>([
     {
       id: "lydar",
-      label: "Registrasi Device Baru",
+      label: "Registrasi ke Server Lydar",
       status: "idle",
       message: "",
     },
@@ -64,7 +92,7 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
     },
     {
       id: "local",
-      label: "Menyimpan ke local server",
+      label: "Menyimpan ke Database Lokal",
       status: "idle",
       message: "",
     },
@@ -92,6 +120,10 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
     setTglPasang("");
     setEmail("");
     setNamaDevice("");
+
+    // Tutup peta saat modal ditutup
+    setShowMap(false);
+
     setProcessStages((prev) =>
       prev.map((s) => ({ ...s, status: "idle", message: "" })),
     );
@@ -282,6 +314,7 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
         );
       }
       updateStage(3, "success");
+
       mutate("getAllDevicesTable");
     } catch (error: any) {
       setProcessStages((prev) => {
@@ -312,7 +345,7 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
             </h2>
             <p className="text-xs text-slate-500 mt-1">
               {step === 4
-                ? "Mohon tunggu, sistem sedang memproses secara berurutan."
+                ? "Sistem sedang memproses data secara berurutan."
                 : "Lengkapi formulir berikut untuk menambahkan device ke sistem."}
             </p>
           </div>
@@ -426,6 +459,7 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
                 />
               </fieldset>
 
+              {/* ================= AREA KOORDINAT & PETA ================= */}
               <div className="flex gap-4">
                 <fieldset className="fieldset flex-1">
                   <legend className="fieldset-legend font-medium text-slate-600">
@@ -452,6 +486,34 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
                   />
                 </fieldset>
               </div>
+
+              {/* Tombol Toggle Peta */}
+              <div className="flex flex-col gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowMap(!showMap)}
+                  className="text-sm font-medium text-sky-600 hover:text-sky-700 flex items-center gap-1 w-fit transition-colors bg-sky-50 px-3 py-1.5 rounded-md">
+                  <MapPin size={16} />
+                  {showMap ? "Sembunyikan Peta" : "Pilih Lokasi dari Peta"}
+                </button>
+
+                {/* Kontainer Peta */}
+                {showMap && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <MapPicker
+                      onLocationSelect={(lat, lng) => {
+                        setLatitude(lat);
+                        setLongitude(lng);
+                      }}
+                    />
+                    <p className="text-[11px] text-slate-500 mt-2 flex items-center gap-1 font-medium px-1">
+                      <Info size={12} className="text-sky-500" /> Klik di area
+                      peta untuk mengisi Latitude & Longitude otomatis.
+                    </p>
+                  </div>
+                )}
+              </div>
+              {/* ======================================================== */}
 
               <div className="flex justify-end gap-3 pt-6 mt-4 border-t border-slate-100">
                 <button
