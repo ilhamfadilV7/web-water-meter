@@ -7,13 +7,14 @@ import background from "../../public/water_background.jpg";
 import sui from "../../public/drop.png";
 import { useRouter } from "next/navigation";
 import { isTokenExpired } from "@/utils/auth";
+import { User, Lock, Droplets } from "lucide-react";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalMessage2, setModalMessage2] = useState("");
-
   const [modalType, setModalType] = useState<"success" | "error" | null>(null);
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
@@ -23,17 +24,15 @@ export default function Home() {
       if (isTokenExpired()) {
         localStorage.removeItem("token");
         localStorage.removeItem("token_expire");
-
         router.push("/");
       }
     }, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setLoading(true);
 
     try {
@@ -46,8 +45,8 @@ export default function Home() {
       );
 
       setModalType("success");
-      setModalMessage("Selamat datang kembali di WaterMeter !");
-      setModalMessage2("Anda akan segera diarahkan ke dashboard");
+      setModalMessage("Selamat datang kembali di WaterMeter!");
+      setModalMessage2("Anda akan segera diarahkan ke dashboard.");
       document.cookie = `token=${result.access_token}; path=/; max-age=${result.expires_in}`;
 
       (document.getElementById("login_modal") as HTMLDialogElement).showModal();
@@ -58,9 +57,9 @@ export default function Home() {
     } catch (error) {
       setModalType("error");
       setModalMessage("Username atau password salah");
+      setModalMessage2("Silakan periksa kembali kredensial Anda.");
 
       (document.getElementById("login_modal") as HTMLDialogElement).showModal();
-      // Handle login failure (e.g., display error message)
     } finally {
       setLoading(false);
     }
@@ -68,128 +67,94 @@ export default function Home() {
 
   return (
     <>
-      <div className="flex min-h-screen flex-col items-center justify-center px-6 py-12 lg:px-8 bg-sky-200">
-        <div className="flex w-full max-w-md flex-col items-center rounded-xl px-6 py-12 shadow-2xl sm:px-12 relative overflow-hidden">
+      <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="absolute inset-0 z-0">
           <Image
             src={background}
-            alt="Background Image"
-            className="absolute inset-0 h-full w-full object-fill z-0"
+            alt="Background"
+            fill
+            className="object-cover opacity-90"
+            priority
           />
-          <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-sm">
-            <Image
-              alt="Your Company"
-              src={sui}
-              className="mx-auto h-18 w-auto"
-            />
-            <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-black/90">
-              WaterMeter | PT RSK
+
+          <div className="absolute inset-0 bg-gradient-to-br from-sky-900/70 via-sky-800/50 to-blue-950/80"></div>
+        </div>
+
+        <div className="relative z-10 flex w-full max-w-md flex-col items-center rounded-3xl p-8 sm:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.2)] bg-white/85 backdrop-blur-xl border border-white/50 transition-all">
+          <div className="flex flex-col items-center w-full mb-8">
+            <div className="relative flex items-center justify-center w-20 h-20 mb-4 bg-white rounded-full shadow-md border border-sky-100">
+              <Image
+                alt="Logo WaterMeter"
+                src={sui}
+                className="h-12 w-auto object-contain"
+              />
+            </div>
+            <h2 className="text-center text-3xl font-extrabold tracking-tight text-slate-800 flex items-center gap-2">
+              WaterMeter <Droplets className="text-cyan-500 w-6 h-6" />
             </h2>
+            <p className="mt-2 text-center text-sm font-medium text-slate-500 tracking-wide uppercase">
+              PT Raharja Sinergi Komunikasi
+            </p>
           </div>
 
-          <div className="relative z-10 mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* <div className="flex flex-col space-y-3">
-                <label className="input validator w-full">
-                  <svg
-                    className="h-[1em] opacity-50"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24">
-                    <g
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                      strokeWidth="2.5"
-                      fill="none"
-                      stroke="currentColor">
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </g>
-                  </svg>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className=" bg-white text-black/90"
-                  />
-                </label>
-
-                <label className="input validator w-full">
-                  <svg
-                    className="h-[1em] opacity-50"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24">
-                    <g
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                      strokeWidth="2.5"
-                      fill="none"
-                      stroke="currentColor">
-                      <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path>
-                      <circle
-                        cx="16.5"
-                        cy="7.5"
-                        r=".5"
-                        fill="currentColor"></circle>
-                    </g>
-                  </svg>
-
-                  <input
-                    type="password"
-                    required
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className=" bg-white text-black/90"
-                  />
-                </label>
-              </div> */}
-
-              <div>
+          <div className="w-full">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="pt-2">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex w-full justify-center rounded-md bg-sky-800 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-sky-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">
+                  className="btn w-full rounded-xl bg-gradient-to-r from-sky-600 to-cyan-600 border-none text-white text-base font-bold shadow-md hover:from-sky-500 hover:to-cyan-500 hover:shadow-lg focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 disabled:opacity-70 disabled:shadow-none">
                   {loading ? (
                     <>
-                      <span className="loading loading-bars loading-sm"></span>
-                      <span className="ml-2">Loading...</span>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      Loading...
                     </>
                   ) : (
-                    "Masuk"
+                    "Masuk ke Sistem"
                   )}
                 </button>
               </div>
             </form>
 
-            <dialog id="login_modal" className="modal">
-              <div className="modal-box">
-                <h3
-                  className={`font-bold text-lg ${
-                    modalType === "success" ? "text-green-600" : "text-red-500"
-                  }`}>
-                  {modalType === "success" ? "Login Berhasil" : "Login Gagal"}
-                </h3>
-
-                <div className="py-4 text-sm text-gray-600 space-y-1">
-                  <p>{modalMessage}</p>
-                  <p>{modalMessage2}</p>
-                </div>
-
-                <div className="modal-action">
-                  <form method="dialog">
-                    <button className="btn">OK</button>
-                  </form>
-                </div>
-              </div>
-            </dialog>
-
-            <p className="font-bold text-xs mt-5 font--geist-mono text-center text-gray-700">
-              © 2026 All rights reserved by PT. Raharja Sinergi Komunikasi
-            </p>
+            <div className="mt-8 text-center">
+              <p className="text-xs font-medium text-slate-400 font-mono">
+                © 2026 Hak Cipta
+                <br />
+                PT. Raharja Sinergi Komunikasi
+              </p>
+            </div>
           </div>
         </div>
       </div>
+
+      <dialog id="login_modal" className="modal">
+        <div className="modal-box bg-white rounded-2xl shadow-2xl border border-slate-100 p-0 overflow-hidden">
+          <div
+            className={`p-6 border-b ${modalType === "success" ? "bg-emerald-50 border-emerald-100" : "bg-red-50 border-red-100"}`}>
+            <h3
+              className={`font-bold text-xl flex items-center justify-center gap-2 ${modalType === "success" ? "text-emerald-700" : "text-red-600"}`}>
+              {modalType === "success"
+                ? "🎉 Autentikasi Berhasil"
+                : "⚠️ Autentikasi Gagal"}
+            </h3>
+          </div>
+
+          <div className="p-8 text-center space-y-2">
+            <p className="text-slate-700 font-medium text-base">
+              {modalMessage}
+            </p>
+            <p className="text-slate-500 text-sm">{modalMessage2}</p>
+          </div>
+
+          <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <form method="dialog" className="w-full sm:w-auto">
+              <button className="btn bg-slate-800 hover:bg-slate-700 text-white w-full border-none rounded-xl px-8">
+                OK
+              </button>
+            </form>
+          </div>
+        </div>
+      </dialog>
     </>
   );
 }

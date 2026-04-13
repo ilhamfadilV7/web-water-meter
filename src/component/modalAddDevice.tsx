@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { mutate } from "swr"; // Untuk otomatis me-refresh tabel di belakang layar
+import { mutate } from "swr";
 import { queryDeviceRegisterInfo } from "@/services/deviceService";
 import { deviceTypes } from "@/utils/deviceType";
-import { Loader2, CheckCircle2, AlertCircle, Clock } from "lucide-react"; // Icon baru untuk indikator proses
+import { Loader2, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
 };
 
-// Interface untuk melacak status tiap API
 interface ProcessStage {
   id: string;
   label: string;
@@ -23,12 +22,8 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [errormsg, setErrorMsg] = useState("");
-
-  // state 1
   const [serialNumber, setSerialNumber] = useState("");
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
-
-  // state 2 & 3 form data
   const [namaWp, setNamaWp] = useState("");
   const [alamat, setAlamat] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
@@ -44,11 +39,8 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
   const [tglpasang, setTglPasang] = useState("");
   const [email, setEmail] = useState("");
   const [namadevice, setNamaDevice] = useState("");
-
   const baseUrl = process.env.NEXT_PUBLIC_API_LYDAR;
   const localDbUrl = process.env.NEXT_PUBLIC_LOCAL_SERVER;
-
-  // STATE UNTUK STEP 4 (TRACKER PROSES API)
   const [isProcessFinished, setIsProcessFinished] = useState(false);
   const [processHasError, setProcessHasError] = useState(false);
   const [processStages, setProcessStages] = useState<ProcessStage[]>([
@@ -85,7 +77,6 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
     setSerialNumber("");
     setErrorMsg("");
     setDeviceInfo(null);
-    // reset form data
     setNamaWp("");
     setAlamat("");
     setDeskripsi("");
@@ -101,8 +92,6 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
     setTglPasang("");
     setEmail("");
     setNamaDevice("");
-
-    // Reset Status Proses
     setProcessStages((prev) =>
       prev.map((s) => ({ ...s, status: "idle", message: "" })),
     );
@@ -149,7 +138,6 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
     }
   };
 
-  // Fungsi helper untuk mengupdate UI Tracker
   const updateStage = (
     index: number,
     status: ProcessStage["status"],
@@ -163,7 +151,6 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
   };
 
   const handleSave = async () => {
-    // Pindah ke Step 4 (UI Loading Progress)
     setStep(4);
     setIsProcessFinished(false);
     setProcessHasError(false);
@@ -174,7 +161,6 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
     try {
       const token = localStorage.getItem("access_token") || "";
 
-      // ================= PROSES 1: HIT LYDAR =================
       updateStage(0, "loading");
       const payload1 = new URLSearchParams({
         deviceName: serialNumber,
@@ -206,7 +192,6 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
       }
       updateStage(0, "success");
 
-      // ================= PROSES 2: DAFTAR MERCHANT =================
       updateStage(1, "loading");
       const payload2 = {
         name: namaWp,
@@ -235,10 +220,9 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
       if (data2.status !== 201 && data2.status !== 200) {
         throw new Error(data2.message || "Gagal membuat Merchant baru.");
       }
-      const merchantId = data2.data._id; // Ambil ID untuk Proses 3
+      const merchantId = data2.data._id;
       updateStage(1, "success");
 
-      // ================= PROSES 3: DAFTAR DEVICE =================
       updateStage(2, "loading");
       const payload3 = {
         merchant_id: merchantId,
@@ -274,7 +258,6 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
       }
       updateStage(2, "success");
 
-      // ================= PROSES 4: DATABASE LOKAL =================
       updateStage(3, "loading");
       const payload4 = {
         merchantId: merchantId,
@@ -299,12 +282,8 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
         );
       }
       updateStage(3, "success");
-
-      // ================= SELESAI =================
-      // Opsional: Langsung panggil SWR mutate agar tabel Devices otomatis refresh tanpa reload page
       mutate("getAllDevicesTable");
     } catch (error: any) {
-      // Cari stage yang sedang 'loading' dan ubah jadi 'error'
       setProcessStages((prev) => {
         const newStages = [...prev];
         const loadingIndex = newStages.findIndex((s) => s.status === "loading");
@@ -324,10 +303,9 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="flex min-h-screen items-center justify-center px-4 py-12">
         <div className="bg-white shadow-2xl rounded-2xl w-full max-w-lg p-6 space-y-4 relative">
-          {/* Header Modal */}
           <div className="border-b border-slate-100 pb-3 mb-2">
             <h2 className="text-xl font-bold text-slate-800">
               {step === 4 ? "Status Registrasi" : "Registrasi Device Baru"}
@@ -643,7 +621,6 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
             </div>
           )}
 
-          {/* ================= STEP 4: TRACKER PROSES ================= */}
           {step === 4 && (
             <div className="space-y-3">
               <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto pr-2 mt-4">

@@ -35,7 +35,6 @@ import {
 import { adjustMinusOneHour, formatToWIB } from "@/utils/date";
 import { getPictures } from "@/services/getPictureService";
 
-// KOMPONEN INI SEKARANG MENERIMA TOKEN & DEVICENAME DARI SERVER
 export default function ClientView({
   deviceName,
   token,
@@ -43,7 +42,6 @@ export default function ClientView({
   deviceName: string;
   token: string;
 }) {
-  // State UI Lokal
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPicPage, setCurrentPicPage] = useState(1);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -65,20 +63,14 @@ export default function ClientView({
     setAlertInfo({ type, message });
     setTimeout(() => {
       setAlertInfo(null);
-    }, 3000); // Alert hilang setelah 3000ms (3 detik)
+    }, 3000);
   };
 
-  // ==========================================
-  // TIDAK ADA LAGI USE-EFFECT UNTUK AUTH!
-  // ==========================================
-
-  // SWR 1: FETCH DEVICE INFO
   const { data: infoData, isLoading: loadingInfo } = useSWR(
     ["deviceInfo", deviceName],
     ([_, name]) => getDeviceDetail(name as string, token),
   );
 
-  // SWR 2: FETCH DATA CAPTURE (Kanan)
   const { data: captureData, isLoading: loadingCapture } = useSWR(
     ["deviceData", deviceName, currentPage],
     ([_, name, page]) => {
@@ -96,41 +88,35 @@ export default function ClientView({
     { keepPreviousData: true },
   );
 
-  // SWR 3: FETCH GALERI GAMBAR (Tab)
   const { data: pictureData, isLoading: loadingPictures } = useSWR(
     ["devicePictures", deviceName, currentPicPage],
     ([_, name, page]) => getPictures(name as string, page as number, 10, token),
     { keepPreviousData: true },
   );
 
-  //fetch data device config
   const { data: deviceConfigData } = useSWR(
     ["deviceConfig", deviceName],
     ([_, name]) => getDeviceConfig(name as string, token),
   );
 
-  //fetch data qWakeupInfo
   const { data: qWakeupInfoData } = useSWR(
     ["deviceQWakeupInfo", deviceName],
     ([_, name]) => getDeviceQWakeupInfo(name as string, token),
   );
 
-  // SWR 4: FETCH DEVICE LOGS (Tab 4)
   const { data: logsData, isLoading: loadingLogs } = useSWR(
-    ["deviceLogs", deviceName, currentPage], // Opsional: Buat logPage terpisah jika ingin beda paginasi dengan Data Capture
+    ["deviceLogs", deviceName, currentPage],
     ([_, name, page]) =>
       getDeviceLogs(name as string, 0, Date.now(), page as number, 10, token),
     { keepPreviousData: true },
   );
 
-  // SWR 5: FETCH SYNC LOGS (API Lokal)
   const { data: syncData, isLoading: loadingSync } = useSWR(
     ["syncLogs", deviceName],
     ([_, name]) => getSyncLogs(name as string),
-    { refreshInterval: 5000 }, // Opsional: Auto-refresh setiap 5 detik agar status "RUNNING" bisa terupdate otomatis
+    { refreshInterval: 5000 },
   );
 
-  // --- EKSTRAKSI DATA ---
   const deviceInfo = infoData?.code === 200 ? infoData.data : null;
   const captureDataList =
     captureData?.code === 200 ? captureData.data?.list || [] : [];
@@ -149,7 +135,6 @@ export default function ClientView({
   const syncList = syncData?.success ? syncData.data : [];
 
   const handleSaveSettings = async () => {
-    // Jika tidak ada perubahan atau sedang loading, batalkan
     if (
       selectedQuality === null ||
       selectedQuality === currentPicQuality ||
@@ -166,9 +151,8 @@ export default function ClientView({
       );
 
       if (result.code === 200) {
-        // Refresh data device info secara background agar UI sinkron dengan database
         await mutate(["deviceInfo", deviceName]);
-        setSelectedQuality(null); // Reset pilihan lokal karena SWR sudah memiliki data baru
+        setSelectedQuality(null);
 
         showCustomAlert("success", "Pengaturan berhasil disimpan!");
       } else {
@@ -182,16 +166,15 @@ export default function ClientView({
   };
 
   const handleSyncNow = async () => {
-    if (isSyncingNow) return; // Mencegah double klik
+    if (isSyncingNow) return;
 
     setIsSyncingNow(true);
     try {
       const result = await startSync(deviceName);
 
-      // Asumsi API Anda mengembalikan { success: true } seperti GET sync-logs
       if (result.success || result.code === 200) {
         showCustomAlert("success", "Perintah sinkronisasi berhasil dikirim!");
-        // Langsung refresh tabel agar muncul baris status "SYNC IS RUNNING"
+
         mutate(["syncLogs", deviceName]);
       } else {
         showCustomAlert(
@@ -228,21 +211,16 @@ export default function ClientView({
   const statusInfo = getDeviceStatus(deviceInfo.deviceStatus);
   const networkInfo = deviceTypes(deviceInfo.networkType);
 
-  // --- HELPER KHUSUS UNTUK MEMAKSA WAKTU SYNC KE WIB ---
   const formatSyncUTCtoWIB = (
     dateString: string | null,
     isTimeOnly = false,
   ) => {
     if (!dateString) return "-";
 
-    // 1. Parsing tanggal dari API apa adanya
     const dateObj = new Date(dateString);
 
-    // 2. FIX BUG DARI BACKEND: Tambahkan ekstra 7 Jam secara manual
-    // Ini mengompensasi backend yang secara keliru telah mengurangi 7 jam sebelumnya.
     dateObj.setHours(dateObj.getHours());
 
-    // 3. Konfigurasi format jam (Tetap kunci ke Jakarta)
     const options: Intl.DateTimeFormatOptions = {
       hour: "2-digit",
       minute: "2-digit",
@@ -263,8 +241,6 @@ export default function ClientView({
   };
 
   const calculateDuration = (start: string, finish: string) => {
-    // Karena start dan finish dua-duanya salah 7 jam, selisih durasinya tetap akan akurat
-    // Jadi kita tidak perlu memodifikasi apapun di sini
     const startMs = new Date(start).getTime();
     const finishMs = new Date(finish).getTime();
     return ((finishMs - startMs) / 1000).toFixed(1);
@@ -272,7 +248,6 @@ export default function ClientView({
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[calc(100vh-6rem)] p-4 relative items-start">
-      {/* ================= TOAST ALERT ================= */}
       {alertInfo && (
         <div className="toast toast-top toast-center z-[9999] mt-14 animate-in slide-in-from-right fade-in duration-300">
           <div
@@ -308,9 +283,7 @@ export default function ClientView({
           </div>
         </div>
       )}
-      {/* ================= BAGIAN KIRI ================= */}
       <div className="flex flex-col gap-4 w-full lg:w-2/3">
-        {/* KOTAK INFORMASI */}
         <div className="h-auto min-h-[120px] rounded-lg border border-slate-300 bg-white shadow-sm p-5 flex flex-col gap-6 shrink-0">
           <p className="font-semibold text-slate-800 text-lg flex items-center gap-2">
             <Info className="w-5 h-5 text-sky-600" /> Informasi Device
@@ -394,10 +367,7 @@ export default function ClientView({
           </div>
         </div>
 
-        {/* ================= TABS ================= */}
-        {/* Menggunakan format murni DaisyUI v5: tabs-box */}
         <div className="tabs tabs-box bg-white border border-slate-300 rounded-lg shadow-sm w-full">
-          {/* TAB 1: GRAFIK PENGGUNAAN */}
           <input
             type="radio"
             name="my_tabs_6"
@@ -410,16 +380,13 @@ export default function ClientView({
             </p>
           </div>
 
-          {/* TAB 2: GALERI GAMBAR */}
           <input
             type="radio"
             name="my_tabs_6"
             className="tab px-4 font-medium text-slate-600"
             aria-label="Galeri Gambar"
           />
-          {/* PERBAIKAN: Jangan taruh flex di tab-content */}
           <div className="tab-content bg-base-100 border-base-300 p-6 mt-2">
-            {/* Bungkus isinya dengan div baru untuk flex layout */}
             <div className="flex flex-col w-full">
               <div className="mb-6">
                 <p className="font-semibold text-slate-800 text-lg">
@@ -486,7 +453,6 @@ export default function ClientView({
                 )}
               </div>
 
-              {/* PAGINATION GALERI */}
               <div className="flex justify-center pt-6 mt-6 border-t border-slate-100">
                 <div className="join shadow-sm">
                   <button
@@ -517,7 +483,6 @@ export default function ClientView({
             </div>
           </div>
 
-          {/* TAB 3: PENGATURAN */}
           <input
             type="radio"
             name="my_tabs_6"
@@ -534,7 +499,6 @@ export default function ClientView({
               </div>
 
               <div className="flex flex-col md:flex-row gap-6 w-full">
-                {/* CARD 1: PENGATURAN GAMBAR */}
                 <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
                   <div className="border-b border-slate-100 pb-3 mb-4">
                     <h3 className="font-semibold text-slate-800">
@@ -635,7 +599,6 @@ export default function ClientView({
                   </div>
                 </div>
 
-                {/* CARD 2: CAPTURE INFO */}
                 <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
                   <div className="border-b border-slate-100 pb-3 mb-4">
                     <h3 className="font-semibold text-slate-800">
@@ -680,7 +643,6 @@ export default function ClientView({
               </div>
             </div>
           </div>
-          {/* ================= TAB 4: LOG SISTEM ================= */}
           <input
             type="radio"
             name="my_tabs_6"
@@ -708,7 +670,6 @@ export default function ClientView({
                       </p>
                     </div>
 
-                    {/* Bungkus KEDUA tombol di dalam satu DIV baru */}
                     <div className="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto mt-2 sm:mt-0">
                       <button
                         onClick={handleSyncNow}
@@ -740,7 +701,6 @@ export default function ClientView({
                       </div>
                     ) : syncList.length > 0 ? (
                       syncList.map((sync: any) => {
-                        // Menentukan warna badge berdasarkan status
                         const isRunning = sync.status === "SYNC IS RUNNING";
                         const isSuccess = sync.status === "SUCCESS";
 
@@ -755,7 +715,6 @@ export default function ClientView({
                             key={sync.id}
                             className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-100 shadow-sm hover:border-sky-200 transition-all gap-4">
                             <div className="flex flex-col gap-2 flex-1">
-                              {/* Header Baris Log */}
                               <div className="flex items-center gap-3">
                                 <span
                                   className={`badge font-bold text-[10px] px-2 py-3 uppercase tracking-wider ${badgeClass}`}>
@@ -772,7 +731,6 @@ export default function ClientView({
                                 </span>
                               </div>
 
-                              {/* Statistik Sync */}
                               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1">
                                 <div
                                   className="flex items-center gap-1.5 text-xs font-medium text-slate-600"
@@ -818,7 +776,6 @@ export default function ClientView({
                                 </div>
                               </div>
 
-                              {/* Tampilkan pesan error jika ada (selain "no error") */}
                               {sync.error_message &&
                                 sync.error_message !== "no error" && (
                                   <div className="text-[11px] text-red-500 font-medium bg-red-50/50 p-2 rounded border border-red-100 mt-1">
@@ -827,7 +784,6 @@ export default function ClientView({
                                 )}
                             </div>
 
-                            {/* Waktu Selesai & Durasi */}
                             <div className="flex flex-col sm:items-end gap-1 shrink-0">
                               {sync.finished ? (
                                 <>
@@ -865,7 +821,6 @@ export default function ClientView({
                   </div>
                 </div>
 
-                {/* ================= CARD 1: LOG DEVICE ================= */}
                 <div className="flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
                   <div className="border-b border-slate-100 pb-3 mb-4">
                     <h3 className="font-semibold text-slate-800">
@@ -883,9 +838,7 @@ export default function ClientView({
                       </div>
                     ) : logsList.length > 0 ? (
                       logsList.map((log: any, index: number) => {
-                        // Ambil error code dan konversi ke number
                         const errNum = parseInt(log.data?.errorNum || "0");
-                        // Dapatkan label, ikon, dan warna dari helper errorCode Anda
                         const errDetail = errorCode(errNum);
 
                         return (
@@ -899,7 +852,6 @@ export default function ClientView({
                                   : "-"}
                               </span>
 
-                              {/* Menampilkan Ikon dan Pesan Error */}
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-bold text-slate-700">
                                   {errDetail.label}
@@ -916,7 +868,7 @@ export default function ClientView({
                                 setSelectedError({
                                   code: errNum,
                                   label: errDetail.label,
-                                  solution: errDetail.Solution, // Mengambil key Solution dari errorCode.ts Anda
+                                  solution: errDetail.Solution,
                                 })
                               }
                               className="badge bg-white text-slate-600 border-slate-200 font-medium px-3 text-xs shrink-0 cursor-pointer hover:bg-sky-50 hover:text-sky-700 hover:border-sky-200 transition-colors">
@@ -940,7 +892,6 @@ export default function ClientView({
         </div>
       </div>
 
-      {/* ================= BAGIAN KANAN (List Capture Data) ================= */}
       <div className="w-full lg:w-1/3 rounded-lg border border-slate-300 bg-white shadow-sm p-5 flex flex-col gap-4 sticky top-4 h-[calc(100vh-2rem)]">
         <div className="shrink-0">
           <p className="font-semibold text-slate-800 text-lg">Data Capture</p>
@@ -1004,7 +955,6 @@ export default function ClientView({
           )}
         </div>
 
-        {/* Pagination List Kanan */}
         <div className="shrink-0 flex justify-center pt-3 border-t border-slate-100 mt-2">
           <div className="join shadow-sm">
             <button
@@ -1028,7 +978,6 @@ export default function ClientView({
         </div>
       </div>
 
-      {/* ================= MODAL GAMBAR MEMBESAR ================= */}
       {selectedImage && (
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
@@ -1051,18 +1000,13 @@ export default function ClientView({
         </div>
       )}
 
-      {/* ================= MODAL ERROR DETAIL ================= */}
       {selectedError && (
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-          onClick={() => setSelectedError(null)} // Tutup jika klik di luar kotak
-        >
-          {/* Kotak Modal */}
+          onClick={() => setSelectedError(null)}>
           <div
             className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col scale-in-center"
-            onClick={(e) => e.stopPropagation()} // Cegah klik di dalam kotak menutup modal
-          >
-            {/* Header Modal */}
+            onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
               <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
                 <Info className="w-5 h-5 text-sky-600" />
@@ -1076,9 +1020,7 @@ export default function ClientView({
               </button>
             </div>
 
-            {/* Konten Modal */}
             <div className="p-6 flex flex-col gap-5">
-              {/* Box Masalah */}
               <div className="flex flex-col gap-2">
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                   ⚠️ Masalah / Indikasi
@@ -1088,7 +1030,6 @@ export default function ClientView({
                 </div>
               </div>
 
-              {/* Box Solusi */}
               <div className="flex flex-col gap-2">
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                   💡 Solusi yang Disarankan
@@ -1107,7 +1048,6 @@ export default function ClientView({
               </div>
             </div>
 
-            {/* Footer Modal */}
             <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
               <button
                 className="btn btn-sm bg-slate-200 hover:bg-slate-300 text-slate-700 border-none px-8 rounded-lg"

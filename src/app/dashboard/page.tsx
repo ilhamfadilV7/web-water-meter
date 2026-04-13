@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import useSWR from "swr"; // <-- Tambahkan SWR
+import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Signal } from "lucide-react";
@@ -21,7 +21,6 @@ const MapLeaflet = dynamic(() => import("@/component/MapLeaflet"), {
 const Dashboard = () => {
   const router = useRouter();
 
-  // 1. Pengecekan Token Auth (Tetap menggunakan useEffect karena ini butuh akses window/localStorage)
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token || isTokenExpired()) {
@@ -31,20 +30,15 @@ const Dashboard = () => {
     }
   }, [router]);
 
-  // 2. FETCH DATA DENGAN SWR
-  // Menggantikan useState(devices) dan useState(deviceLoading)
   const { data, isLoading } = useSWR("getAllDevices", getDevices);
 
-  // Jika data SWR belum ada, berikan array kosong sebagai default
   const devices: Device[] = data || [];
 
-  // 3. DERIVED STATE (Otomatis terhitung ulang jika 'devices' berubah, tanpa perlu useState!)
   const onlineCount = devices.filter((d) => d.deviceStatus === 1).length;
   const sleepCount = devices.filter((d) => d.deviceStatus === 2).length;
   const offlineCount = devices.filter((d) => d.deviceStatus === 3).length;
   const notActiveCount = devices.filter((d) => d.deviceStatus === 4).length;
 
-  // 4. Loading UI (Opsional)
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]">
@@ -55,7 +49,6 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 px-3 sm:px-0">
-      {/* ================= HEADER ================= */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <span className="text-xl sm:text-2xl font-semibold">
           Welcome Back, User
@@ -73,13 +66,10 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ================= MAIN GRID ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* ================= DEVICE STATUS ================= */}
         <div className="bg-white p-4 sm:p-6 rounded-box shadow-md space-y-6">
           <span className="font-semibold">Device Status</span>
 
-          {/* STATUS GRID */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               {
@@ -117,8 +107,6 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* ================= DEVICE LIST ================= */}
-          {/* ---------- MOBILE CARD LIST ---------- */}
           <div className="sm:hidden space-y-3 overflow-y-auto max-h-96 pr-2">
             {devices.map((device) => {
               const status = getDeviceStatus(device.deviceStatus);
@@ -155,7 +143,6 @@ const Dashboard = () => {
             })}
           </div>
 
-          {/* ---------- DESKTOP TABLE ---------- */}
           <div className="hidden sm:block">
             <div className="overflow-y-auto max-h-[400px] border rounded-box shadow-inner">
               <table className="table table-zebra table-sm">
@@ -165,9 +152,9 @@ const Dashboard = () => {
                     <th>Nama</th>
                     <th>Tipe</th>
                     <th>Status</th>
-                    <th>Signal</th>
+                    <th>Sinyal</th>
                     <th>Baterai</th>
-                    <th>Last update</th>
+                    <th>Update terakhir</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -189,7 +176,7 @@ const Dashboard = () => {
                           </span>
                         </td>
                         <td>{device.signal || "-"}</td>
-                        <td>{device.batteryCapacity || "-"}</td>
+                        <td>{device.electricity || "-"}</td>
                         <td className="text-xs">
                           {device.lastTime
                             ? adjustMinusOneHour(device.lastTime)
@@ -211,13 +198,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* ================= CHART ================= */}
         <div className="w-full min-h-65 sm:min-h-85">
           <ChartAreaGradient />
         </div>
       </div>
 
-      {/* ================= MAP ================= */}
       <div className="bg-white p-4 sm:p-6 rounded-box shadow-sm hidden md:block">
         <div className="h-64 sm:h-112 z-0 relative">
           <MapLeaflet devices={devices} />

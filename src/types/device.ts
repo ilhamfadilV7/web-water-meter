@@ -14,4 +14,5 @@ export interface Device {
   cloudIncrement: number;
   batteryCapacity: number;
   recentPicPath: string;
+  electricity: number;
 }
