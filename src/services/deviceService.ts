@@ -1,5 +1,7 @@
 const baseUrl = process.env.NEXT_PUBLIC_API_LYDAR;
 const urlPob = process.env.NEXT_PUBLIC_LOCAL_SERVER;
+const proxyUrl = "/api/proxy-lokal";
+
 export async function getDevices() {
   const token = localStorage.getItem("access_token");
 
@@ -198,6 +200,9 @@ export async function getDeviceLogs(
 export async function getSyncLogs(deviceName: string) {
   const res = await fetch(`${urlPob}/api/wm/sync-logs/${deviceName}`, {
     method: "GET",
+    headers: {
+      "ngrok-skip-browser-warning": "69420",
+    },
   });
 
   if (!res.ok) {
@@ -208,16 +213,19 @@ export async function getSyncLogs(deviceName: string) {
 }
 
 export async function startSync(deviceName: string) {
-  const res = await fetch(`${urlPob}/api/wm/sync/device`, {
+  const res = await fetch(`${proxyUrl}/api/wm/sync/device`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "69420", // <--- TAMBAHKAN BARIS INI
     },
     // Sesuaikan key JSON ini ("device_name" atau "deviceName") dengan ekspektasi Backend Anda
     body: JSON.stringify({
       deviceName: deviceName,
     }),
   });
+
+  console.log(res);
 
   if (!res.ok) {
     throw new Error("Gagal memicu sinkronisasi");

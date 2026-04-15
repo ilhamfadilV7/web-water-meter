@@ -301,9 +301,12 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
         type: deviceTypes(deviceInfo?.accessType || 1).label,
       };
 
-      const res4 = await fetch(`${localDbUrl}/api/device/register`, {
+      const res4 = await fetch(`/api/proxy-lokal/api/device/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "69420", // <--- TAMBAHKAN BARIS INI
+        },
         body: JSON.stringify(payload4),
       });
       const data4 = await res4.json();
