@@ -233,3 +233,78 @@ export async function startSync(deviceName: string) {
 
   return res.json();
 }
+
+export async function addParams(deviceName: string) {
+  const token = localStorage.getItem("access_token");
+
+  const params = new URLSearchParams({
+    deviceName: deviceName,
+    value: "true",
+    productKey: "BPecljyVCy3",
+    access_token: token || "",
+    type: "0",
+    desc: "Mengidentifikasi nilai atribut secara otomatis",
+  });
+
+  const res = await fetch(
+    `${baseUrl}/manage/addDeviceParam?${params.toString()}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    },
+  );
+  if (!res.ok) {
+    throw new Error("Gagal menambahkan parameter");
+  }
+
+  return res.json();
+}
+
+// Fungsi untuk mengambil semua device dari Database Lokal (187)
+export async function getLocalDevices() {
+  const res = await fetch(`${urlPob}/api/wm/device/all`, {
+    method: "GET",
+    // Tambahkan headers ini untuk memastikan response berupa JSON
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Gagal menghubungi server lokal untuk mengambil devices");
+  }
+
+  const result = await res.json();
+
+  // 2. SESUAIKAN DENGAN POSTMAN: Ambil dari result.devices, bukan result.data
+  return result.devices || [];
+}
+
+// Fungsi utama: Membandingkan Lydar vs Lokal
+export async function getUnsyncedDevices() {
+  try {
+    // 1. Tarik semua data dari Lydar
+    const lydarDevices = await getDevices();
+
+    // 2. Tarik semua data dari DB Lokal 187
+    const localDevices = await getLocalDevices();
+
+    // 3. Ekstrak Serial Number dari DB Lokal ke dalam bentuk array sederhana
+    // Sesuaikan "serialNumber" dengan nama field di database lokal Anda
+    const localSerialNumbers = localDevices.map((dev: any) => dev.serialNumber);
+
+    // 4. Lakukan Filtering
+    const unsyncedList = lydarDevices.filter((lydarDev: any) => {
+      // Jika deviceName (SN) Lydar TIDAK ADA di array lokal, maka masukkan ke list unsynced
+      return !localSerialNumbers.includes(lydarDev.deviceName);
+    });
+
+    return unsyncedList;
+  } catch (error) {
+    console.error("Gagal mendeteksi device Unsynced:", error);
+    return [];
+  }
+}

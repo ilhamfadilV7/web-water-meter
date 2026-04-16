@@ -306,9 +306,6 @@ export default function ClientView({
               <div className="flex flex-col items-center gap-1 font-bold text-sky-700">
                 <Battery className="w-5 h-5 text-green-500" />
                 <span className="text-md">{deviceInfo.electricity}%</span>
-                <span className="text-sm">
-                  dari {deviceInfo.batteryCapacity} mAh
-                </span>
               </div>
             </div>
             <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 border border-slate-100 shadow-sm hover:shadow-xl transition-shadow hover:border-sky-500">

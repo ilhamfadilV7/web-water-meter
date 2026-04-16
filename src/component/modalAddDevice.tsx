@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import dynamic from "next/dynamic"; // <-- Tambahkan untuk dynamic import
-import { mutate } from "swr";
-import { queryDeviceRegisterInfo } from "@/services/deviceService";
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import useSWR, { mutate } from "swr"; // <-- Tambahkan useSWR di sini
+import { queryDeviceRegisterInfo, getDevices } from "@/services/deviceService";
 import { deviceTypes } from "@/utils/deviceType";
 import {
   Loader2,
@@ -14,7 +14,7 @@ import {
   Info,
 } from "lucide-react";
 
-// DYNAMIC IMPORT MAP (Agar tidak error "window is not defined" di Next.js)
+// DYNAMIC IMPORT MAP
 const MapPicker = dynamic(() => import("./MapPicker"), {
   ssr: false,
   loading: () => (
@@ -24,11 +24,6 @@ const MapPicker = dynamic(() => import("./MapPicker"), {
   ),
 });
 
-type Props = {
-  isOpen: boolean;
-  onClose: () => void;
-};
-
 interface ProcessStage {
   id: string;
   label: string;
@@ -36,7 +31,17 @@ interface ProcessStage {
   message: string;
 }
 
-export default function ModalAddDevice({ isOpen, onClose }: Props) {
+interface ModalAddDeviceProps {
+  isOpen: boolean;
+  onClose: () => void;
+  selectedSN?: string | null;
+}
+
+export default function ModalAddDevice({
+  isOpen,
+  onClose,
+  selectedSN,
+}: ModalAddDeviceProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [errormsg, setErrorMsg] = useState("");
@@ -45,7 +50,7 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
   const [serialNumber, setSerialNumber] = useState("");
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
 
-  // state 2 & 3 form data
+  // state form data
   const [namaWp, setNamaWp] = useState("");
   const [alamat, setAlamat] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
@@ -62,25 +67,18 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
   const [email, setEmail] = useState("");
   const [namadevice, setNamaDevice] = useState("");
 
-  // STATE UNTUK TOGGLE PETA
   const [showMap, setShowMap] = useState(false);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_LYDAR || "https://api.lydar.tech";
-  const localDbUrl =
-    process.env.NEXT_PUBLIC_LOCAL_DB || "http://10.20.10.187:3130";
+  // MENGAMBIL CACHE TABEL LYDAR UNTUK FALLBACK TIPE DEVICE
+  const { data: lydarDevices } = useSWR("getAllDevicesTable", getDevices);
 
   const [isProcessFinished, setIsProcessFinished] = useState(false);
   const [processHasError, setProcessHasError] = useState(false);
+
   const [processStages, setProcessStages] = useState<ProcessStage[]>([
     {
-      id: "lydar",
-      label: "Registrasi ke Server Lydar",
-      status: "idle",
-      message: "",
-    },
-    {
       id: "merchant",
-      label: "Membuat Data Merchant",
+      label: "Membuat Data Merchant Baru",
       status: "idle",
       message: "",
     },
@@ -98,39 +96,82 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
     },
   ]);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) {
+      if (selectedSN) {
+        setSerialNumber(selectedSN);
+        handleAutoFetchDevice(selectedSN);
+      } else {
+        setStep(1);
+      }
+    } else {
+      setStep(1);
+      setSerialNumber("");
+      setErrorMsg("");
+      setDeviceInfo(null);
+      setNamaWp("");
+      setAlamat("");
+      setDeskripsi("");
+      setLatitude("");
+      setLongitude("");
+      setPersentase("");
+      setNop("");
+      setKontak("");
+      setTglPasang("");
+      setEmail("");
+      setNamaDevice("");
+      setShowMap(false);
+      setProcessStages((prev) =>
+        prev.map((s) => ({ ...s, status: "idle", message: "" })),
+      );
+      setIsProcessFinished(false);
+      setProcessHasError(false);
+    }
+  }, [isOpen, selectedSN]);
 
-  const handleClose = () => {
-    setStep(1);
-    setSerialNumber("");
-    setErrorMsg("");
-    setDeviceInfo(null);
-    setNamaWp("");
-    setAlamat("");
-    setDeskripsi("");
-    setLatitude("");
-    setLongitude("");
-    setProvinsi("pob_demo");
-    setKota("pob_demo");
-    setKategori("AIR BAWAH TANAH");
-    setPersentase("");
-    setTipePajak("include");
-    setNop("");
-    setKontak("");
-    setTglPasang("");
-    setEmail("");
-    setNamaDevice("");
+  // =====================================================================
+  // SMART FETCHER: Mencari Tipe Device & Auto-Fill Data Lydar
+  // =====================================================================
+  const fetchAndSetDeviceInfo = async (sn: string) => {
+    // 1. CARI DATA DI CACHE SWR LYDAR UNTUK AUTO-FILL
+    const existingInLydar = lydarDevices?.find((d: any) => d.deviceName === sn);
 
-    // Tutup peta saat modal ditutup
-    setShowMap(false);
+    if (existingInLydar) {
+      // Jika data ditemukan di Lydar, langsung isi otomatis form-nya!
+      setNamaWp(existingInLydar.houseNumber || "");
+      setAlamat(existingInLydar.address || "");
+      // Gunakan remark atau description tergantung format Lydar Anda
+      setDeskripsi(existingInLydar.description || existingInLydar.remark || "");
+      // Koordinat (jika ada di Lydar)
+      setLatitude(existingInLydar.latitude || existingInLydar.lat || "");
+      setLongitude(existingInLydar.longitude || existingInLydar.lng || "");
+      setNamaDevice(existingInLydar.deviceName || sn);
+    }
 
-    setProcessStages((prev) =>
-      prev.map((s) => ({ ...s, status: "idle", message: "" })),
-    );
-    setIsProcessFinished(false);
-    setProcessHasError(false);
+    // 2. AMBIL TIPE JARINGAN (WIFI/NBIOT) DARI API
+    try {
+      const response = await queryDeviceRegisterInfo(sn);
+      if (response.data && response.data.accessType) {
+        setDeviceInfo(response.data);
+        return;
+      }
+    } catch (error) {
+      // Abaikan error dan lanjut ke Plan B
+    }
 
-    onClose();
+    // 3. PLAN B TIPE JARINGAN: Curi dari tabel SWR
+    if (existingInLydar && existingInLydar.networkType) {
+      setDeviceInfo({ accessType: existingInLydar.networkType });
+    } else {
+      setDeviceInfo(null);
+    }
+  };
+
+  const handleAutoFetchDevice = async (sn: string) => {
+    setLoading(true);
+    await fetchAndSetDeviceInfo(sn);
+    setLoading(false);
+    setStep(2); // SELALU paksa pindah ke Step 2
   };
 
   const handleNextStep1 = async () => {
@@ -138,37 +179,15 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
       setErrorMsg("Serial number tidak boleh kosong");
       return;
     }
-
     setLoading(true);
     setErrorMsg("");
 
-    try {
-      const response = await queryDeviceRegisterInfo(serialNumber);
+    await fetchAndSetDeviceInfo(serialNumber);
 
-      if (response.code === 200 && response.data) {
-        setDeviceInfo(response.data);
-        setStep(2);
-      } else if (response.code === 1004) {
-        setErrorMsg("Device sudah terdaftar !");
-      } else {
-        if (response.msg && response.msg.toLowerCase().includes("not exist")) {
-          setErrorMsg("Serial Number Tidak Valid");
-        } else {
-          setErrorMsg(
-            response.msg || "Device tidak ditemukan atau tidak valid.",
-          );
-        }
-      }
-    } catch (error: any) {
-      if (error.message && error.message.toLowerCase().includes("not exist")) {
-        setErrorMsg("SN tidak valid");
-      } else {
-        setErrorMsg(error.message || "Terjadi kesalahan sistem.");
-      }
-    } finally {
-      setLoading(false);
-    }
+    setLoading(false);
+    setStep(2); // SELALU paksa pindah ke Step 2
   };
+  // =====================================================================
 
   const updateStage = (
     index: number,
@@ -191,41 +210,9 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
     );
 
     try {
-      const token = localStorage.getItem("access_token") || "";
-
+      // PROSES 1: MEMBUAT MERCHANT POB
       updateStage(0, "loading");
-      const payload1 = new URLSearchParams({
-        deviceName: serialNumber,
-        productKey: "BPecljyVCy3",
-        access_token: token,
-        description: deskripsi,
-        powerSupply: "false",
-        networkType: deviceInfo?.accessType || "1",
-        dataFrom: "0",
-        houseNumber: namaWp,
-        address: alamat,
-        extraParams: "",
-        newBattery: "1",
-        batteryCapacity: "1700",
-        useCode: "1",
-      });
-
-      const res1 = await fetch(`${baseUrl}/manage/device/newCreateDevice`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: payload1.toString(),
-      });
-      const data1 = await res1.json();
-
-      if (data1.code !== 200) {
-        throw new Error(
-          data1.msg || "Gagal mendaftarkan device di server utama (Lydar).",
-        );
-      }
-      updateStage(0, "success");
-
-      updateStage(1, "loading");
-      const payload2 = {
+      const payloadMerchant = {
         name: namaWp,
         tax_category: kategori || "AIR BAWAH TANAH",
         nop: nop,
@@ -239,28 +226,29 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
         longitude: longitude,
       };
 
-      const res2 = await fetch("/api/v3/merchants", {
+      const resMerchant = await fetch("/api/v3/merchants", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Site-Destination": kota,
         },
-        body: JSON.stringify(payload2),
+        body: JSON.stringify(payloadMerchant),
       });
-      const data2 = await res2.json();
+      const dataMerchant = await resMerchant.json();
 
-      if (data2.status !== 201 && data2.status !== 200) {
-        throw new Error(data2.message || "Gagal membuat Merchant baru.");
+      if (dataMerchant.status !== 201 && dataMerchant.status !== 200) {
+        throw new Error(dataMerchant.message || "Gagal membuat Merchant baru.");
       }
-      const merchantId = data2.data._id;
-      updateStage(1, "success");
+      const merchantId = dataMerchant.data._id;
+      updateStage(0, "success");
 
-      updateStage(2, "loading");
-      const payload3 = {
+      // PROSES 2: MENAUTKAN KE MERCHANT
+      updateStage(1, "loading");
+      const payloadDevicePOB = {
         merchant_id: merchantId,
         devices: [
           {
-            name: namadevice,
+            name: namadevice || serialNumber,
             pmt: "server",
             device_metode: "API",
             sn: serialNumber,
@@ -271,54 +259,57 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
         ],
       };
 
-      const res3 = await fetch("/api/v3/devices", {
+      const resDevicePOB = await fetch("/api/v3/devices", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Site-Destination": kota,
         },
-        body: JSON.stringify(payload3),
+        body: JSON.stringify(payloadDevicePOB),
       });
-      const data3 = await res3.json();
+      const dataDevicePOB = await resDevicePOB.json();
 
-      if (data3.status !== 201 && data3.status !== 200) {
-        throw new Error(data3.message || "Gagal menautkan device ke Merchant.");
+      if (dataDevicePOB.status !== 201 && dataDevicePOB.status !== 200) {
+        throw new Error(
+          dataDevicePOB.message || "Gagal menautkan device ke Merchant.",
+        );
       }
-      const newDeviceId = data3?.data?.[0]?._id;
+      const newDeviceId = dataDevicePOB?.data?.[0]?._id;
       if (!newDeviceId) {
-        throw new Error("Device ID tidak ditemukan pada respon server!");
+        throw new Error("Device ID tidak ditemukan pada respon POB!");
       }
-      updateStage(2, "success");
+      updateStage(1, "success");
 
-      updateStage(3, "loading");
-      const payload4 = {
+      // PROSES 3: DATABASE LOKAL (RELASI)
+      updateStage(2, "loading");
+      const payloadLokal = {
         merchantId: merchantId,
         deviceName: serialNumber,
         deviceId: newDeviceId,
         status: 1,
         wilayah: kota,
         serialNumber: serialNumber,
+        // Jika tidak ada deviceInfo, gunakan fallback "1"
         type: deviceTypes(deviceInfo?.accessType || 1).label,
       };
 
-      const res4 = await fetch(`/api/proxy-lokal/api/device/register`, {
+      const resLokal = await fetch(`/api/proxy-lokal/api/device/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "69420", // <--- TAMBAHKAN BARIS INI
-        },
-        body: JSON.stringify(payload4),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadLokal),
       });
-      const data4 = await res4.json();
+      const dataLokal = await resLokal.json();
 
-      if (!res4.ok) {
+      if (!resLokal.ok) {
         throw new Error(
-          data4.message || "Gagal menyimpan data device ke database lokal.",
+          dataLokal.message || "Gagal menyimpan relasi ke database lokal.",
         );
       }
-      updateStage(3, "success");
+      updateStage(2, "success");
 
+      // Refresh tabel utama
       mutate("getAllDevicesTable");
+      mutate("getLocalDevices");
     } catch (error: any) {
       setProcessStages((prev) => {
         const newStages = [...prev];
@@ -338,18 +329,24 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="flex min-h-screen items-center justify-center px-4 py-12">
         <div className="bg-white shadow-2xl rounded-2xl w-full max-w-lg p-6 space-y-4 relative">
           <div className="border-b border-slate-100 pb-3 mb-2">
             <h2 className="text-xl font-bold text-slate-800">
-              {step === 4 ? "Status Registrasi" : "Registrasi Device Baru"}
+              {step === 4
+                ? "Status Sinkronisasi"
+                : selectedSN
+                  ? "Sinkronisasi Device POB"
+                  : "Registrasi Device Baru"}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
               {step === 4
                 ? "Sistem sedang memproses data secara berurutan."
-                : "Lengkapi formulir berikut untuk menambahkan device ke sistem."}
+                : "Lengkapi formulir berikut untuk menyinkronkan device."}
             </p>
           </div>
 
@@ -382,7 +379,7 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
               <div className="flex justify-end gap-3 pt-6 mt-4 border-t border-slate-100">
                 <button
                   className="btn btn-ghost text-slate-600 hover:bg-slate-100"
-                  onClick={handleClose}
+                  onClick={onClose}
                   disabled={loading}>
                   Batal
                 </button>
@@ -403,14 +400,14 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
           {step === 2 && (
             <div className="space-y-4">
               <div className="bg-emerald-50 text-emerald-700 p-3 rounded-lg border border-emerald-100 text-sm mb-4 font-semibold flex items-center gap-2">
-                <CheckCircle2 size={18} /> Serial Number Valid!
+                <CheckCircle2 size={18} /> Device Siap Disinkronkan!
               </div>
 
               <div className="flex flex-col gap-1 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-4">
                 <span className="text-xs text-slate-500 font-medium">
                   Serial Number:{" "}
                   <span className="font-bold text-slate-800">
-                    {deviceInfo?.deviceName}
+                    {serialNumber}
                   </span>
                 </span>
                 <span className="text-xs text-slate-500 font-medium">
@@ -418,7 +415,7 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
                   <span className="font-bold text-sky-700">
                     {deviceInfo
                       ? deviceTypes(deviceInfo.accessType).label
-                      : "Unknown"}
+                      : "Memuat Data Tipe..."}
                   </span>
                 </span>
               </div>
@@ -462,7 +459,7 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
                 />
               </fieldset>
 
-              {/* ================= AREA KOORDINAT & PETA ================= */}
+              {/* KOORDINAT & PETA */}
               <div className="flex gap-4">
                 <fieldset className="fieldset flex-1">
                   <legend className="fieldset-legend font-medium text-slate-600">
@@ -490,17 +487,15 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
                 </fieldset>
               </div>
 
-              {/* Tombol Toggle Peta */}
               <div className="flex flex-col gap-2 mt-1">
                 <button
                   type="button"
                   onClick={() => setShowMap(!showMap)}
                   className="text-sm font-medium text-sky-600 hover:text-sky-700 flex items-center gap-1 w-fit transition-colors bg-sky-50 px-3 py-1.5 rounded-md">
-                  <MapPin size={16} />
+                  <MapPin size={16} />{" "}
                   {showMap ? "Sembunyikan Peta" : "Pilih Lokasi dari Peta"}
                 </button>
 
-                {/* Kontainer Peta */}
                 {showMap && (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300 bg-slate-50 p-2 rounded-xl border border-slate-100">
                     <MapPicker
@@ -511,18 +506,20 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
                     />
                     <p className="text-[11px] text-slate-500 mt-2 flex items-center gap-1 font-medium px-1">
                       <Info size={12} className="text-sky-500" /> Klik di area
-                      peta untuk mengisi Latitude & Longitude otomatis.
+                      peta untuk mengisi Latitude & Longitude.
                     </p>
                   </div>
                 )}
               </div>
-              {/* ======================================================== */}
 
               <div className="flex justify-end gap-3 pt-6 mt-4 border-t border-slate-100">
                 <button
                   className="btn btn-ghost text-slate-600 hover:bg-slate-100"
-                  onClick={() => setStep(1)}>
-                  Kembali
+                  onClick={() => {
+                    if (selectedSN) onClose();
+                    else setStep(1);
+                  }}>
+                  {selectedSN ? "Batal" : "Kembali"}
                 </button>
                 <button
                   className="btn bg-sky-600 hover:bg-sky-700 text-white border-none px-8"
@@ -680,7 +677,7 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
                 <button
                   className="btn bg-sky-600 hover:bg-sky-700 text-white border-none px-8 shadow-md"
                   onClick={handleSave}>
-                  Proses Registrasi
+                  Proses Sinkronisasi
                 </button>
               </div>
             </div>
@@ -747,7 +744,7 @@ export default function ModalAddDevice({ isOpen, onClose }: Props) {
                         ? "bg-red-500 hover:bg-red-600"
                         : "bg-emerald-500 hover:bg-emerald-600"
                   }`}
-                  onClick={handleClose}
+                  onClick={onClose}
                   disabled={!isProcessFinished}>
                   {!isProcessFinished
                     ? "Mohon Tunggu..."
