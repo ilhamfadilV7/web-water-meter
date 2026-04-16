@@ -90,7 +90,7 @@ export default function Home() {
               />
             </div>
             <h2 className="text-center text-3xl font-extrabold tracking-tight text-slate-800 flex items-center gap-2">
-              WaterMeter <Droplets className="text-cyan-500 w-6 h-6" />
+              Smart Water Meter
             </h2>
             <p className="mt-2 text-center text-sm font-medium text-slate-500 tracking-wide uppercase">
               PT Raharja Sinergi Komunikasi
@@ -110,7 +110,7 @@ export default function Home() {
                       Loading...
                     </>
                   ) : (
-                    "Masuk ke Sistem"
+                    "Masuk"
                   )}
                 </button>
               </div>

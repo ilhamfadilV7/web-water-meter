@@ -1,11 +1,22 @@
-// src/component/sidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BarChart3, Settings, Droplets } from "lucide-react";
+import {
+  Home,
+  BarChart3,
+  Settings,
+  Droplets,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
-export default function Sidebar({ collapsed }: { collapsed: boolean }) {
+interface SidebarProps {
+  collapsed: boolean;
+  setCollapsed: (val: boolean) => void;
+}
+
+export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -20,51 +31,50 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
       bg-gradient-to-b from-sky-800 to-blue-950 border-r border-sky-900 shadow-2xl
       ${collapsed ? "w-20" : "w-64"}
       text-white relative z-20`}>
-      {/* LOGO AREA */}
-      <div className="p-6 flex items-center justify-center sm:justify-start gap-3 font-bold text-2xl border-b border-white/10 shrink-0">
-        <Droplets className="text-cyan-400 min-w-8 min-h-8 drop-shadow-md" />
+      {/* ================= HEADER / LOGO ================= */}
+      <div
+        className={`flex items-center h-20 border-b border-white/10 shrink-0 transition-all
+        ${collapsed ? "justify-center px-0" : "justify-start px-6 gap-3"}`}>
+        <Droplets className="text-cyan-400 w-8 h-8 drop-shadow-md shrink-0" />
         {!collapsed && (
-          <span className="tracking-wider truncate">WaterMeter</span>
+          <span className="font-bold text-2xl tracking-wider truncate animate-in fade-in duration-300">
+            WaterMeter
+          </span>
         )}
       </div>
 
-      {/* MENU */}
-      <ul className="flex flex-col p-4 gap-2 mt-4 font-medium flex-1 overflow-y-auto overflow-x-hidden">
+      {/* ================= MENU NAVIGASI ================= */}
+      <ul className="flex flex-col p-4 gap-2 mt-2 font-medium flex-1 overflow-y-auto overflow-x-hidden">
         {navItems.map((item) => {
-          // Cek apakah tab aktif
           const isActive =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
-
-          // Mengambil icon secara dinamis dari array navItems
           const Icon = item.icon;
 
-          // LOGIKA RESPONSIVE:
-          // Jika menu adalah Dashboard atau Settings, tandai sebagai hidden di mobile
           const isHiddenOnMobile =
             item.name === "Dashboard" || item.name === "Settings";
 
           return (
             <li
               key={item.name}
-              // Terapkan class 'hidden md:block' agar Dashboard & Settings HILANG di HP
               className={isHiddenOnMobile ? "hidden md:block" : "block"}>
               <Link
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                className={`flex items-center gap-3 py-3 rounded-lg transition-colors group
                   ${
                     isActive
                       ? "bg-sky-600/50 text-white font-semibold border border-sky-500/30 shadow-sm"
                       : "text-sky-100/70 hover:bg-sky-800/50 hover:text-white"
                   }
-                  ${collapsed ? "justify-center px-0" : ""}
+                  ${collapsed ? "justify-center px-0" : "px-4"} 
                 `}
                 title={collapsed ? item.name : ""}>
-                {/* Render Ikon Secara Dinamis */}
-                <Icon className="w-5 h-5 shrink-0" />
-
-                {/* Render Teks (Hanya jika tidak di-collapse) */}
+                <Icon
+                  className={`w-5 h-5 shrink-0 ${!isActive && "group-hover:scale-110 transition-transform"}`}
+                />
                 {!collapsed && (
-                  <span className="whitespace-nowrap">{item.name}</span>
+                  <span className="whitespace-nowrap animate-in slide-in-from-left-2 duration-200">
+                    {item.name}
+                  </span>
                 )}
               </Link>
             </li>
@@ -72,12 +82,32 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
         })}
       </ul>
 
-      {/* FOOTER SIDEBAR */}
-      {!collapsed && (
-        <div className="p-4 text-[10px] text-sky-200/40 text-center border-t border-white/10 font-mono shrink-0">
-          © 2026 PT Raharja Sinergi Komunikasi
-        </div>
-      )}
+      {/* ================= FOOTER (TOGGLE & COPYRIGHT) ================= */}
+      <div className="flex flex-col border-t border-white/10 shrink-0 bg-black/10">
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className={`hidden md:flex items-center py-4 text-sky-100/70 hover:text-white hover:bg-white/5 transition-colors
+            ${collapsed ? "justify-center" : "px-6 gap-3"}`}
+          title={collapsed ? "Perlebar Sidebar" : "Perkecil Sidebar"}>
+          {collapsed ? (
+            <ChevronRight className="w-6 h-6" />
+          ) : (
+            <>
+              <ChevronLeft className="w-5 h-5 shrink-0" />
+              <span className="font-medium text-sm whitespace-nowrap">
+                Sembunyikan Menu
+              </span>
+            </>
+          )}
+        </button>
+
+        {/* Copyright */}
+        {!collapsed && (
+          <div className="px-4 pb-4 pt-1 text-[10px] text-sky-200/40 text-center font-mono animate-in fade-in duration-300">
+            © 2026 PT Raharja Sinergi
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

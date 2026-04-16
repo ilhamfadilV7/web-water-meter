@@ -5,7 +5,7 @@ import useSWR from "swr";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Settings, Search, RefreshCw, AlertCircle } from "lucide-react"; // <-- Tambah icon AlertCircle
+import { Settings, Search, RefreshCw, AlertCircle } from "lucide-react";
 
 import { Device } from "@/types/device";
 import { getDevices, getLocalDevices } from "@/services/deviceService";
@@ -35,7 +35,6 @@ const DevicePage = () => {
   // ==============================================================
   // 1. AMBIL LIST DARI DB LOKAL (SWR Error Handling Diaktifkan)
   // ==============================================================
-  // Kita ambil state "error: localError" dari SWR
   const {
     data: localData,
     isLoading: isLoadingLocal,
@@ -56,7 +55,6 @@ const DevicePage = () => {
   const lydarDevices: Device[] = lydarData || [];
 
   const devicesWithSyncStatus = lydarDevices.map((dev) => {
-    // Tentukan 3 Status: 'error' (server mati), 'unsynced' (alat baru), 'synced' (sudah terdaftar)
     let syncStatus = "synced";
 
     if (localError) {
@@ -208,13 +206,13 @@ const DevicePage = () => {
 
                       {/* STATUS BADGE MOBILE */}
                       {syncStatus === "unsynced" ? (
-                        <span className="badge badge-sm font-medium bg-rose-100 text-rose-700 border-none px-2 py-3 text-center leading-tight shadow-sm">
+                        <span className="badge badge-sm font-medium bg-rose-100 text-rose-700 border-none p-5 text-center leading-tight shadow-sm">
                           Belum
                           <br />
                           Sinkron
                         </span>
                       ) : syncStatus === "error" ? (
-                        <span className="badge badge-sm font-medium bg-red-100 text-red-700 border-none px-2 py-3 text-center leading-tight shadow-sm">
+                        <span className="badge badge-sm font-medium bg-red-100 text-red-700 border-none p-5 text-center leading-tight shadow-sm">
                           Server
                           <br />
                           Offline
@@ -276,25 +274,12 @@ const DevicePage = () => {
                       </div>
 
                       {/* ACTION BUTTON MOBILE */}
-                      {syncStatus === "unsynced" ? (
-                        <button
-                          onClick={() => handleOpenSync(device.deviceName)}
-                          className="btn btn-sm bg-rose-500 hover:bg-rose-600 text-white border-none rounded-lg flex gap-1">
-                          <RefreshCw className="w-3 h-3" /> Sinkron
-                        </button>
-                      ) : syncStatus === "error" ? (
-                        <button
-                          disabled
-                          className="btn btn-sm bg-slate-200 text-slate-400 border-none rounded-lg flex gap-1 cursor-not-allowed">
-                          <AlertCircle className="w-3 h-3" /> Error
-                        </button>
-                      ) : (
-                        <Link
-                          href={`/devices/detail?id=${device.deviceName}`}
-                          className="btn btn-sm bg-sky-100 text-sky-700 hover:bg-sky-200 border-none px-4 rounded-lg">
-                          Detail
-                        </Link>
-                      )}
+
+                      <Link
+                        href={`/devices/detail?id=${device.deviceName}`}
+                        className="btn btn-sm bg-sky-100 text-sky-700 hover:bg-sky-200 border-none px-4 rounded-lg">
+                        Detail
+                      </Link>
                     </div>
                   </div>
                 );
@@ -375,7 +360,7 @@ const DevicePage = () => {
                         <td>
                           {syncStatus === "unsynced" ? (
                             <span className="p-2 badge badge-sm font-medium bg-rose-100 text-rose-700 border-none">
-                              Belum Sinkron POB
+                              Belum Sinkron
                             </span>
                           ) : syncStatus === "error" ? (
                             <span className="p-2 badge badge-sm font-medium bg-red-100 text-red-700 border-none">
@@ -438,14 +423,12 @@ const DevicePage = () => {
                         {/* 8. KOLOM MANAGE (GEAR MENU) */}
                         <td className="text-center px-4">
                           {syncStatus === "error" ? (
-                            /* JIKA SERVER OFFLINE: Tampilkan ikon gear mati tanpa dropdown */
                             <div
                               className="btn btn-sm btn-ghost btn-circle cursor-not-allowed opacity-50"
                               title="Aksi Dinonaktifkan (Server Offline)">
                               <Settings className="w-5 h-5 text-red-400" />
                             </div>
                           ) : (
-                            /* JIKA NORMAL ATAU BELUM SINKRON: Tampilkan dropdown DaisyUI */
                             <div className="dropdown dropdown-bottom dropdown-end">
                               <div
                                 tabIndex={0}
@@ -527,7 +510,7 @@ const DevicePage = () => {
       <ModalAddDevice
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
-        selectedSN={selectedUnsyncedSN} // <--- Tambahkan baris ini
+        selectedSN={selectedUnsyncedSN}
       />
     </div>
   );

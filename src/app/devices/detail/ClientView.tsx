@@ -1,4 +1,3 @@
-// src/app/devices/detail/ClientView.tsx
 "use client";
 
 import { useState } from "react";
@@ -58,6 +57,8 @@ export default function ClientView({
     type: "success" | "error";
     message: string;
   } | null>(null);
+
+  const [activeTab, setActiveTab] = useState("pengaturan");
 
   const showCustomAlert = (type: "success" | "error", message: string) => {
     setAlertInfo({ type, message });
@@ -364,529 +365,569 @@ export default function ClientView({
           </div>
         </div>
 
-        <div className="tabs tabs-box bg-white border border-slate-300 rounded-lg shadow-sm w-full">
-          <input
-            type="radio"
-            name="my_tabs_6"
-            className="tab px-4 font-medium text-slate-600"
-            aria-label="Grafik Penggunaan"
-          />
-          <div className="tab-content bg-base-100 border-base-300 p-6 mt-2">
-            <p className="font-semibold text-slate-600 flex items-center gap-2">
-              <Activity className="w-5 h-5" /> Grafik Penggunaan (Coming Soon)
-            </p>
-          </div>
+        {/* HEADER TAB SELECTION (REACT STATE TABS)                           */}
+        <div className="w-full bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+          {/* Wadah Tab (Header) */}
+          <div className="bg-slate-50 border-b border-slate-100 p-2 sm:p-3 sm:overflow-x-auto no-scrollbar">
+            <div
+              className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:min-w-max sm:space-x-2 sm:gap-0"
+              role="tablist">
+              <button
+                onClick={() => setActiveTab("grafik")}
+                className={`px-2 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 ${
+                  activeTab === "grafik"
+                    ? "bg-white text-sky-700 shadow-sm ring-1 ring-slate-200"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                }`}>
+                <Activity className="w-4 h-4 shrink-0" />
+                <span className="truncate">Grafik Penggunaan</span>
+              </button>
 
-          <input
-            type="radio"
-            name="my_tabs_6"
-            className="tab px-4 font-medium text-slate-600"
-            aria-label="Galeri Gambar"
-          />
-          <div className="tab-content bg-base-100 border-base-300 p-6 mt-2">
-            <div className="flex flex-col w-full">
-              <div className="mb-6">
-                <p className="font-semibold text-slate-800 text-lg">
-                  Galeri Gambar
-                </p>
-              </div>
+              <button
+                onClick={() => setActiveTab("galeri")}
+                className={`px-2 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 ${
+                  activeTab === "galeri"
+                    ? "bg-white text-sky-700 shadow-sm ring-1 ring-slate-200"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                }`}>
+                <Image
+                  src={sui}
+                  alt="icon"
+                  width={16}
+                  height={16}
+                  className="w-auto h-auto opacity-70 grayscale peer-checked/galeri:grayscale-0 peer-checked/galeri:opacity-100 transition-all"
+                />
+                <span className="truncate">Galeri Gambar</span>
+              </button>
 
-              <div className="w-full">
-                {loadingPictures ? (
-                  <div className="flex justify-center items-center h-32">
-                    <span className="loading loading-spinner text-sky-500"></span>
-                  </div>
-                ) : pictureList.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {pictureList.map((pic: any, index: number) => (
-                      <div
-                        key={index}
-                        className="flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all group">
-                        <div
-                          className="relative w-full aspect-[4/3] bg-slate-900 border-b border-slate-200 overflow-hidden"
-                          onClick={() =>
-                            pic.path && setSelectedImage(pic.path)
-                          }>
-                          {pic.path ? (
-                            <Image
-                              src={pic.path}
-                              alt={`Capture ${index}`}
-                              fill
-                              className="object-cover group-hover:opacity-75 group-hover:scale-105 transition-all duration-300 cursor-pointer"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-slate-100">
-                              <Image
-                                src={sui}
-                                alt="No pic"
-                                width={30}
-                                height={30}
-                                className="opacity-30"
-                              />
-                            </div>
-                          )}
-                        </div>
+              <button
+                onClick={() => setActiveTab("pengaturan")}
+                className={`px-2 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 ${
+                  activeTab === "pengaturan"
+                    ? "bg-white text-sky-700 shadow-sm ring-1 ring-slate-200"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                }`}>
+                <Settings className="w-4 h-4 shrink-0" />
+                <span className="truncate">Pengaturan</span>
+              </button>
 
-                        <div className="flex flex-col p-3 gap-1 bg-slate-50">
-                          <span className="text-[11px] font-semibold text-slate-400">
-                            {pic.createTime
-                              ? adjustMinusOneHour(pic.createTime)
-                              : "-"}
-                          </span>
-                          <span className="text-sm font-bold text-sky-700">
-                            {pic.value || 0}{" "}
-                            <span className="text-xs font-normal text-slate-500">
-                              m³
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex justify-center items-center h-32 text-slate-400">
-                    Belum ada gambar tersedia.
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-center pt-6 mt-6 border-t border-slate-100">
-                <div className="join shadow-sm">
-                  <button
-                    className="join-item btn btn-sm bg-white border-slate-300 text-slate-600 hover:bg-slate-100"
-                    onClick={() =>
-                      setCurrentPicPage((prev) => Math.max(1, prev - 1))
-                    }
-                    disabled={currentPicPage === 1 || loadingPictures}>
-                    «
-                  </button>
-                  <button className="join-item btn btn-sm bg-white border-slate-300 text-slate-700 pointer-events-none">
-                    Page {currentPicPage} of {totalPicPages}
-                  </button>
-                  <button
-                    className="join-item btn btn-sm bg-white border-slate-300 text-slate-600 hover:bg-slate-100"
-                    onClick={() =>
-                      setCurrentPicPage((prev) =>
-                        Math.min(totalPicPages, prev + 1),
-                      )
-                    }
-                    disabled={
-                      currentPicPage === totalPicPages || loadingPictures
-                    }>
-                    »
-                  </button>
-                </div>
-              </div>
+              <button
+                onClick={() => setActiveTab("log")}
+                className={`px-2 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 ${
+                  activeTab === "log"
+                    ? "bg-white text-sky-700 shadow-sm ring-1 ring-slate-200"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                }`}>
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span className="truncate">Log Sistem</span>
+              </button>
             </div>
           </div>
 
-          <input
-            type="radio"
-            name="my_tabs_6"
-            className="tab px-4 font-medium text-slate-600"
-            aria-label="Pengaturan"
-            defaultChecked
-          />
-          <div className="tab-content bg-base-100 border-base-300 p-6 mt-2">
-            <div className="flex flex-col w-full">
-              <div className="shrink-0 mb-6">
-                <p className="font-semibold text-slate-800 text-lg flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-sky-600" /> Pengaturan
+          {/* ================================================================= */}
+          <div className="relative w-full bg-white p-6 min-h-[400px]">
+            {/* --- KONTEN 1: GRAFIK --- */}
+            {activeTab === "grafik" && (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <p className="font-semibold text-slate-600 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-sky-500" /> Grafik
+                  Penggunaan (Coming Soon)
                 </p>
               </div>
+            )}
 
-              <div className="flex flex-col md:flex-row gap-6 w-full">
-                <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-                  <div className="border-b border-slate-100 pb-3 mb-4">
-                    <h3 className="font-semibold text-slate-800">
-                      Pengaturan Gambar
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Atur kualitas gambar yang dikirim oleh device ke server.
+            {/* --- KONTEN 2: GALERI --- */}
+            {activeTab === "galeri" && (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex flex-col w-full">
+                  <div className="mb-6">
+                    <p className="font-semibold text-slate-800 text-lg">
+                      Galeri Gambar
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-5 flex-1">
-                    <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
-                      <span className="text-sm font-medium text-slate-600">
-                        Kualitas Saat Ini
-                      </span>
-                      <span className="badge bg-sky-100 text-sky-700 border-sky-200 font-semibold px-3">
-                        {currentPicQuality === 5
-                          ? "Rendah"
-                          : currentPicQuality === 3
-                            ? "Sedang"
-                            : currentPicQuality === 1
-                              ? "Bagus"
-                              : "Unknown"}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                      <span className="text-sm font-medium text-slate-700">
-                        Ubah Kualitas:
-                      </span>
-                      <div className="flex flex-wrap items-center gap-4 sm:gap-6 bg-white border border-slate-100 p-3 rounded-lg">
-                        <label
-                          className={`flex items-center gap-2 ${currentPicQuality === 5 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"}`}>
-                          <input
-                            type="radio"
-                            name="picQuality"
-                            value="5"
-                            className="radio radio-sm radio-info"
-                            checked={displayQuality === 5}
-                            disabled={currentPicQuality === 5 || isSaving}
-                            onChange={() => setSelectedQuality(5)}
-                          />
-                          <span className="text-sm text-slate-700 font-medium">
-                            Rendah
-                          </span>
-                        </label>
-
-                        <label
-                          className={`flex items-center gap-2 ${currentPicQuality === 3 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"}`}>
-                          <input
-                            type="radio"
-                            name="picQuality"
-                            value="3"
-                            className="radio radio-sm radio-info"
-                            checked={displayQuality === 3}
-                            disabled={currentPicQuality === 3 || isSaving}
-                            onChange={() => setSelectedQuality(3)}
-                          />
-                          <span className="text-sm text-slate-700 font-medium">
-                            Sedang
-                          </span>
-                        </label>
-
-                        <label
-                          className={`flex items-center gap-2 ${currentPicQuality === 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"}`}>
-                          <input
-                            type="radio"
-                            name="picQuality"
-                            value="1"
-                            className="radio radio-sm radio-info"
-                            checked={displayQuality === 1}
-                            disabled={currentPicQuality === 1 || isSaving}
-                            onChange={() => setSelectedQuality(1)}
-                          />
-                          <span className="text-sm text-slate-700 font-medium">
-                            Bagus
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-slate-50 flex justify-end">
-                    <button
-                      onClick={handleSaveSettings}
-                      disabled={
-                        selectedQuality === null ||
-                        selectedQuality === currentPicQuality ||
-                        isSaving
-                      }
-                      className="btn btn-sm bg-sky-600 hover:bg-sky-700 text-white border-none shadow-sm px-6">
-                      {isSaving ? (
-                        <span className="loading loading-spinner loading-xs"></span>
-                      ) : (
-                        "Simpan"
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-                  <div className="border-b border-slate-100 pb-3 mb-4">
-                    <h3 className="font-semibold text-slate-800">
-                      Pengaturan Capture
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1">
-                      pengaturan pengambilan gambar oleh device
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col gap-3 flex-1">
-                    <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
-                      <span className="text-sm font-medium text-slate-600">
-                        Periode Capture
-                      </span>
-
-                      <span className="text-sm font-bold text-slate-700">
-                        {wakeupinfo?.interval === 1440
-                          ? "Setiap 24 jam"
-                          : wakeupinfo?.interval
-                            ? `Setiap ${wakeupinfo.interval} menit`
-                            : "-"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
-                      <span className="text-sm font-medium text-slate-600">
-                        Mode Capture
-                      </span>
-
-                      <span className="text-sm font-bold text-slate-700">
-                        {wakeupinfo?.mode === 2 ? "Daily" : "-"}
-                      </span>
-                    </div>
-
-                    {/* <div className="flex-1 flex items-center justify-center border-2 border-dashed border-slate-100 rounded-lg bg-slate-50 opacity-60 mt-2 min-h-[80px]">
-                      <span className="text-xs font-medium text-slate-400">
-                        Tidak ada informasi tambahan
-                      </span>
-                    </div> */}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <input
-            type="radio"
-            name="my_tabs_6"
-            className="tab px-4 font-medium text-slate-600"
-            aria-label="Log Sistem"
-          />
-          <div className="tab-content bg-base-100 border-base-300 p-6 mt-2">
-            <div className="flex flex-col w-full">
-              <div className="shrink-0 mb-6">
-                <p className="font-semibold text-slate-800 text-lg flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-sky-600" /> Log Sistem
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-6 w-full">
-                {/* ================= CARD 3: RIWAYAT SINKRONISASI ================= */}
-                <div className="w-full flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-                  <div className="border-b border-slate-100 pb-3 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                    <div>
-                      <h3 className="font-semibold text-slate-800">
-                        Riwayat Sinkronisasi Data
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Log proses penarikan data dari server ke web dinas.
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto mt-2 sm:mt-0">
-                      <button
-                        onClick={handleSyncNow}
-                        disabled={isSyncingNow || loadingSync}
-                        className="btn btn-xs btn-ghost text-sky-600 hover:bg-sky-50 disabled:bg-transparent disabled:text-sky-300 flex-1 sm:flex-none justify-center">
-                        {isSyncingNow ? (
-                          <span className="loading loading-spinner loading-xs mr-1"></span>
-                        ) : (
-                          <Play size={14} className="mr-1" />
-                        )}
-                        {isSyncingNow ? "Memulai..." : "Sinkron Data"}
-                      </button>
-                      <button
-                        onClick={() => mutate(["syncLogs", deviceName])}
-                        className="btn btn-xs btn-ghost text-sky-600 hover:bg-sky-50 flex-1 sm:flex-none justify-center">
-                        <RefreshCw
-                          size={14}
-                          className={loadingSync ? "animate-spin" : ""}
-                        />{" "}
-                        Refresh
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-3 overflow-y-auto max-h-[300px] pr-2">
-                    {loadingSync && syncList.length === 0 ? (
-                      <div className="flex justify-center items-center h-24">
-                        <span className="loading loading-spinner text-sky-500"></span>
-                      </div>
-                    ) : syncList.length > 0 ? (
-                      syncList.map((sync: any) => {
-                        const isRunning = sync.status === "SYNC IS RUNNING";
-                        const isSuccess = sync.status === "SUCCESS";
-
-                        const badgeClass = isRunning
-                          ? "bg-blue-100 text-blue-700 border-blue-200"
-                          : isSuccess
-                            ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                            : "bg-red-100 text-red-700 border-red-200";
-
-                        return (
-                          <div
-                            key={sync.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-100 shadow-sm hover:border-sky-200 transition-all gap-4">
-                            <div className="flex flex-col gap-2 flex-1">
-                              <div className="flex items-center gap-3">
-                                <span
-                                  className={`badge font-bold text-[10px] px-2 py-3 uppercase tracking-wider ${badgeClass}`}>
-                                  {isRunning && (
-                                    <RefreshCw
-                                      size={12}
-                                      className="mr-1 animate-spin"
-                                    />
-                                  )}
-                                  {sync.status}
-                                </span>
-                                <span className="text-xs font-semibold text-slate-500">
-                                  {formatSyncUTCtoWIB(sync.started_at)}
-                                </span>
-                              </div>
-
-                              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1">
-                                <div
-                                  className="flex items-center gap-1.5 text-xs font-medium text-slate-600"
-                                  title="Total data ditarik dari Lydar">
-                                  <Download
-                                    size={14}
-                                    className="text-slate-400"
-                                  />
-                                  <span>
-                                    Fetched:{" "}
-                                    <strong className="text-slate-800">
-                                      {sync.total_fetched}
-                                    </strong>
-                                  </span>
-                                </div>
-                                <div
-                                  className="flex items-center gap-1.5 text-xs font-medium text-emerald-600"
-                                  title="Total data berhasil disimpan ke lokal">
-                                  <Database
-                                    size={14}
-                                    className="text-emerald-500"
-                                  />
-                                  <span>
-                                    Inserted:{" "}
-                                    <strong className="text-emerald-700">
-                                      {sync.total_inserted}
-                                    </strong>
-                                  </span>
-                                </div>
-                                <div
-                                  className="flex items-center gap-1.5 text-xs font-medium text-red-600"
-                                  title="Total data gagal diproses">
-                                  <AlertCircle
-                                    size={14}
-                                    className="text-red-500"
-                                  />
-                                  <span>
-                                    Failed:{" "}
-                                    <strong className="text-red-700">
-                                      {sync.total_failed}
-                                    </strong>
-                                  </span>
-                                </div>
-                              </div>
-
-                              {sync.error_message &&
-                                sync.error_message !== "no error" && (
-                                  <div className="text-[11px] text-red-500 font-medium bg-red-50/50 p-2 rounded border border-red-100 mt-1">
-                                    Error: {sync.error_message}
-                                  </div>
-                                )}
-                            </div>
-
-                            <div className="flex flex-col sm:items-end gap-1 shrink-0">
-                              {sync.finished ? (
-                                <>
-                                  <span className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">
-                                    Selesai
-                                  </span>
-                                  <span className="text-xs font-bold text-slate-600">
-                                    {formatSyncUTCtoWIB(sync.finished, true)}
-                                  </span>
-                                  <span className="text-[10px] text-slate-400 mt-1">
-                                    Durasi:{" "}
-                                    {calculateDuration(
-                                      sync.started_at,
-                                      sync.finished,
-                                    )}
-                                    s
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="text-xs font-medium text-blue-500 animate-pulse flex items-center gap-1">
-                                  Memproses...
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-24 opacity-60">
-                        <span className="text-sm font-medium text-slate-400">
-                          Belum ada riwayat sinkronisasi
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-                  <div className="border-b border-slate-100 pb-3 mb-4">
-                    <h3 className="font-semibold text-slate-800">
-                      Log Device Water Meter
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Log error atau event yang terjadi pada device.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col gap-3 flex-1 overflow-y-auto max-h-[400px] pr-2">
-                    {loadingLogs ? (
+                  <div className="w-full">
+                    {loadingPictures ? (
                       <div className="flex justify-center items-center h-32">
                         <span className="loading loading-spinner text-sky-500"></span>
                       </div>
-                    ) : logsList.length > 0 ? (
-                      logsList.map((log: any, index: number) => {
-                        const errNum = parseInt(log.data?.errorNum || "0");
-                        const errDetail = errorCode(errNum);
-
-                        return (
+                    ) : pictureList.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {pictureList.map((pic: any, index: number) => (
                           <div
-                            key={log.id || index}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100 shadow-sm hover:shadow-md transition-all gap-3">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[11px] font-semibold text-slate-400">
-                                {log.createTime
-                                  ? adjustMinusOneHour(log.createTime)
-                                  : "-"}
-                              </span>
-
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-slate-700">
-                                  {errDetail.label}
-                                </span>
-                              </div>
-
-                              <span className="text-xs font-medium text-sky-700 mt-1">
-                                Code: {log.data?.errorNum || "Unknown"}
-                              </span>
+                            key={index}
+                            className="flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all group">
+                            <div
+                              className="relative w-full aspect-[4/3] bg-slate-900 border-b border-slate-200 overflow-hidden"
+                              onClick={() =>
+                                pic.path && setSelectedImage(pic.path)
+                              }>
+                              {pic.path ? (
+                                <Image
+                                  src={pic.path}
+                                  alt={`Capture ${index}`}
+                                  fill
+                                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                                  className="object-cover group-hover:opacity-75 group-hover:scale-105 transition-all duration-300 cursor-pointer"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center bg-slate-100">
+                                  <Image
+                                    src={sui}
+                                    alt="No pic"
+                                    width={30}
+                                    height={30}
+                                    className="w-auto h-auto opacity-30"
+                                  />
+                                </div>
+                              )}
                             </div>
 
-                            <span
-                              onClick={() =>
-                                setSelectedError({
-                                  code: errNum,
-                                  label: errDetail.label,
-                                  solution: errDetail.Solution,
-                                })
-                              }
-                              className="badge bg-white text-slate-600 border-slate-200 font-medium px-3 text-xs shrink-0 cursor-pointer hover:bg-sky-50 hover:text-sky-700 hover:border-sky-200 transition-colors">
-                              Detail
-                            </span>
+                            <div className="flex flex-col p-3 gap-1 bg-slate-50">
+                              <span className="text-[11px] font-semibold text-slate-400">
+                                {pic.createTime
+                                  ? adjustMinusOneHour(pic.createTime)
+                                  : "-"}
+                              </span>
+                              <span className="text-sm font-bold text-sky-700">
+                                {pic.value || 0}{" "}
+                                <span className="text-xs font-normal text-slate-500">
+                                  m³
+                                </span>
+                              </span>
+                            </div>
                           </div>
-                        );
-                      })
+                        ))}
+                      </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center h-32 opacity-60">
-                        <span className="text-sm font-medium text-slate-400">
-                          Tidak ada log tercatat
-                        </span>
+                      <div className="flex justify-center items-center h-32 text-slate-400">
+                        Belum ada gambar tersedia.
                       </div>
                     )}
                   </div>
+
+                  <div className="flex justify-center pt-6 mt-6 border-t border-slate-100">
+                    <div className="join shadow-sm">
+                      <button
+                        className="join-item btn btn-sm bg-white border-slate-300 text-slate-600 hover:bg-slate-100"
+                        onClick={() =>
+                          setCurrentPicPage((prev) => Math.max(1, prev - 1))
+                        }
+                        disabled={currentPicPage === 1 || loadingPictures}>
+                        «
+                      </button>
+                      <button className="join-item btn btn-sm bg-white border-slate-300 text-slate-700 pointer-events-none">
+                        Page {currentPicPage} of {totalPicPages}
+                      </button>
+                      <button
+                        className="join-item btn btn-sm bg-white border-slate-300 text-slate-600 hover:bg-slate-100"
+                        onClick={() =>
+                          setCurrentPicPage((prev) =>
+                            Math.min(totalPicPages, prev + 1),
+                          )
+                        }
+                        disabled={
+                          currentPicPage === totalPicPages || loadingPictures
+                        }>
+                        »
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* --- KONTEN 3: PENGATURAN --- */}
+            {activeTab === "pengaturan" && (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex flex-col w-full">
+                  <div className="shrink-0 mb-6">
+                    <p className="font-semibold text-slate-800 text-lg flex items-center gap-2">
+                      <Settings className="w-5 h-5 text-sky-600" /> Pengaturan
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col md:flex-row gap-6 w-full">
+                    <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                      <div className="border-b border-slate-100 pb-3 mb-4">
+                        <h3 className="font-semibold text-slate-800">
+                          Pengaturan Gambar
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Atur kualitas gambar yang dikirim oleh device ke
+                          server.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-5 flex-1">
+                        <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
+                          <span className="text-sm font-medium text-slate-600">
+                            Kualitas Saat Ini
+                          </span>
+                          <span className="badge bg-sky-100 text-sky-700 border-sky-200 font-semibold px-3">
+                            {currentPicQuality === 5
+                              ? "Rendah"
+                              : currentPicQuality === 3
+                                ? "Sedang"
+                                : currentPicQuality === 1
+                                  ? "Bagus"
+                                  : "Unknown"}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                          <span className="text-sm font-medium text-slate-700">
+                            Ubah Kualitas:
+                          </span>
+                          <div className="flex flex-wrap items-center gap-4 sm:gap-6 bg-white border border-slate-100 p-3 rounded-lg">
+                            <label
+                              className={`flex items-center gap-2 ${currentPicQuality === 5 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"}`}>
+                              <input
+                                type="radio"
+                                name="picQuality"
+                                value="5"
+                                className="radio radio-sm radio-info"
+                                checked={displayQuality === 5}
+                                disabled={currentPicQuality === 5 || isSaving}
+                                onChange={() => setSelectedQuality(5)}
+                              />
+                              <span className="text-sm text-slate-700 font-medium">
+                                Rendah
+                              </span>
+                            </label>
+                            <label
+                              className={`flex items-center gap-2 ${currentPicQuality === 3 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"}`}>
+                              <input
+                                type="radio"
+                                name="picQuality"
+                                value="3"
+                                className="radio radio-sm radio-info"
+                                checked={displayQuality === 3}
+                                disabled={currentPicQuality === 3 || isSaving}
+                                onChange={() => setSelectedQuality(3)}
+                              />
+                              <span className="text-sm text-slate-700 font-medium">
+                                Sedang
+                              </span>
+                            </label>
+                            <label
+                              className={`flex items-center gap-2 ${currentPicQuality === 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"}`}>
+                              <input
+                                type="radio"
+                                name="picQuality"
+                                value="1"
+                                className="radio radio-sm radio-info"
+                                checked={displayQuality === 1}
+                                disabled={currentPicQuality === 1 || isSaving}
+                                onChange={() => setSelectedQuality(1)}
+                              />
+                              <span className="text-sm text-slate-700 font-medium">
+                                Bagus
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 pt-4 border-t border-slate-50 flex justify-end">
+                        <button
+                          onClick={handleSaveSettings}
+                          disabled={
+                            selectedQuality === null ||
+                            selectedQuality === currentPicQuality ||
+                            isSaving
+                          }
+                          className="btn btn-sm bg-sky-600 hover:bg-sky-700 text-white border-none shadow-sm px-6">
+                          {isSaving ? (
+                            <span className="loading loading-spinner loading-xs"></span>
+                          ) : (
+                            "Simpan"
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                      <div className="border-b border-slate-100 pb-3 mb-4">
+                        <h3 className="font-semibold text-slate-800">
+                          Pengaturan Capture
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          pengaturan pengambilan gambar oleh device
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-3 flex-1">
+                        <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
+                          <span className="text-sm font-medium text-slate-600">
+                            Periode Capture
+                          </span>
+                          <span className="text-sm font-bold text-slate-700">
+                            {wakeupinfo?.interval === 1440
+                              ? "Setiap 24 jam"
+                              : wakeupinfo?.interval
+                                ? `Setiap ${wakeupinfo.interval} menit`
+                                : "-"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
+                          <span className="text-sm font-medium text-slate-600">
+                            Mode Capture
+                          </span>
+                          <span className="text-sm font-bold text-slate-700">
+                            {wakeupinfo?.mode === 2 ? "Daily" : "-"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* --- KONTEN 4: LOG SISTEM --- */}
+            {activeTab === "log" && (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex flex-col w-full">
+                  <div className="shrink-0 mb-6">
+                    <p className="font-semibold text-slate-800 text-lg flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-sky-600" /> Log
+                      Sistem
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-6 w-full">
+                    {/* RIWAYAT SINKRONISASI */}
+                    <div className="w-full flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                      <div className="border-b border-slate-100 pb-3 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                        <div>
+                          <h3 className="font-semibold text-slate-800">
+                            Riwayat Sinkronisasi Data
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Log proses penarikan data dari server ke web dinas.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto mt-2 sm:mt-0">
+                          <button
+                            onClick={handleSyncNow}
+                            disabled={isSyncingNow || loadingSync}
+                            className="btn btn-xs btn-ghost text-sky-600 hover:bg-sky-50 disabled:bg-transparent disabled:text-sky-300 flex-1 sm:flex-none justify-center">
+                            {isSyncingNow ? (
+                              <span className="loading loading-spinner loading-xs mr-1"></span>
+                            ) : (
+                              <Play size={14} className="mr-1" />
+                            )}
+                            {isSyncingNow ? "Memulai..." : "Sinkron Data"}
+                          </button>
+                          <button
+                            onClick={() => mutate(["syncLogs", deviceName])}
+                            className="btn btn-xs btn-ghost text-sky-600 hover:bg-sky-50 flex-1 sm:flex-none justify-center">
+                            <RefreshCw
+                              size={14}
+                              className={loadingSync ? "animate-spin" : ""}
+                            />{" "}
+                            Refresh
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-3 overflow-y-auto max-h-[300px] pr-2">
+                        {loadingSync && syncList.length === 0 ? (
+                          <div className="flex justify-center items-center h-24">
+                            <span className="loading loading-spinner text-sky-500"></span>
+                          </div>
+                        ) : syncList.length > 0 ? (
+                          syncList.map((sync: any) => {
+                            const isRunning = sync.status === "SYNC IS RUNNING";
+                            const isSuccess = sync.status === "SUCCESS";
+                            const badgeClass = isRunning
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : isSuccess
+                                ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                : "bg-red-100 text-red-700 border-red-200";
+
+                            return (
+                              <div
+                                key={sync.id}
+                                className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-100 shadow-sm hover:border-sky-200 transition-all gap-4">
+                                <div className="flex flex-col gap-2 flex-1">
+                                  <div className="flex items-center gap-3">
+                                    <span
+                                      className={`badge font-bold text-[10px] px-2 py-3 uppercase tracking-wider ${badgeClass}`}>
+                                      {isRunning && (
+                                        <RefreshCw
+                                          size={12}
+                                          className="mr-1 animate-spin"
+                                        />
+                                      )}
+                                      {sync.status}
+                                    </span>
+                                    <span className="text-xs font-semibold text-slate-500">
+                                      {formatSyncUTCtoWIB(sync.started_at)}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1">
+                                    <div
+                                      className="flex items-center gap-1.5 text-xs font-medium text-slate-600"
+                                      title="Total data ditarik dari Lydar">
+                                      <Download
+                                        size={14}
+                                        className="text-slate-400"
+                                      />
+                                      <span>
+                                        Fetched:{" "}
+                                        <strong className="text-slate-800">
+                                          {sync.total_fetched}
+                                        </strong>
+                                      </span>
+                                    </div>
+                                    <div
+                                      className="flex items-center gap-1.5 text-xs font-medium text-emerald-600"
+                                      title="Total data berhasil disimpan ke lokal">
+                                      <Database
+                                        size={14}
+                                        className="text-emerald-500"
+                                      />
+                                      <span>
+                                        Inserted:{" "}
+                                        <strong className="text-emerald-700">
+                                          {sync.total_inserted}
+                                        </strong>
+                                      </span>
+                                    </div>
+                                    <div
+                                      className="flex items-center gap-1.5 text-xs font-medium text-red-600"
+                                      title="Total data gagal diproses">
+                                      <AlertCircle
+                                        size={14}
+                                        className="text-red-500"
+                                      />
+                                      <span>
+                                        Failed:{" "}
+                                        <strong className="text-red-700">
+                                          {sync.total_failed}
+                                        </strong>
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {sync.error_message &&
+                                    sync.error_message !== "no error" && (
+                                      <div className="text-[11px] text-red-500 font-medium bg-red-50/50 p-2 rounded border border-red-100 mt-1">
+                                        Error: {sync.error_message}
+                                      </div>
+                                    )}
+                                </div>
+                                <div className="flex flex-col sm:items-end gap-1 shrink-0">
+                                  {sync.finished ? (
+                                    <>
+                                      <span className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">
+                                        Selesai
+                                      </span>
+                                      <span className="text-xs font-bold text-slate-600">
+                                        {formatSyncUTCtoWIB(
+                                          sync.finished,
+                                          true,
+                                        )}
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 mt-1">
+                                        Durasi:{" "}
+                                        {calculateDuration(
+                                          sync.started_at,
+                                          sync.finished,
+                                        )}
+                                        s
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="text-xs font-medium text-blue-500 animate-pulse flex items-center gap-1">
+                                      Memproses...
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-24 opacity-60">
+                            <span className="text-sm font-medium text-slate-400">
+                              Belum ada riwayat sinkronisasi
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* LOG DEVICE WATER METER */}
+                    <div className="flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                      <div className="border-b border-slate-100 pb-3 mb-4">
+                        <h3 className="font-semibold text-slate-800">
+                          Log Device Water Meter
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Log error atau event yang terjadi pada device.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-3 flex-1 overflow-y-auto max-h-[400px] pr-2">
+                        {loadingLogs ? (
+                          <div className="flex justify-center items-center h-32">
+                            <span className="loading loading-spinner text-sky-500"></span>
+                          </div>
+                        ) : logsList.length > 0 ? (
+                          logsList.map((log: any, index: number) => {
+                            const errNum = parseInt(log.data?.errorNum || "0");
+                            const errDetail = errorCode(errNum);
+
+                            return (
+                              <div
+                                key={log.id || index}
+                                className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100 shadow-sm hover:shadow-md transition-all gap-3">
+                                <div className="flex flex-col gap-1">
+                                  <span className="text-[11px] font-semibold text-slate-400">
+                                    {log.createTime
+                                      ? adjustMinusOneHour(log.createTime)
+                                      : "-"}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-slate-700">
+                                      {errDetail.label}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs font-medium text-sky-700 mt-1">
+                                    Code: {log.data?.errorNum || "Unknown"}
+                                  </span>
+                                </div>
+                                <span
+                                  onClick={() =>
+                                    setSelectedError({
+                                      code: errNum,
+                                      label: errDetail.label,
+                                      solution: errDetail.Solution,
+                                    })
+                                  }
+                                  className="badge bg-white text-slate-600 border-slate-200 font-medium px-3 text-xs shrink-0 cursor-pointer hover:bg-sky-50 hover:text-sky-700 hover:border-sky-200 transition-colors">
+                                  Detail
+                                </span>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-32 opacity-60">
+                            <span className="text-sm font-medium text-slate-400">
+                              Tidak ada log tercatat
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
+        {/* ================================================================= */}
       </div>
 
       <div className="w-full lg:w-1/3 rounded-lg border border-slate-300 bg-white shadow-sm p-5 flex flex-col gap-4 sticky top-4 h-[calc(100vh-2rem)]">
@@ -929,6 +970,7 @@ export default function ClientView({
                       src={item.path}
                       alt="Capture"
                       fill
+                      sizes="50px"
                       className="object-cover"
                     />
                   ) : (
@@ -938,7 +980,7 @@ export default function ClientView({
                         alt="No pic"
                         width={30}
                         height={30}
-                        className="opacity-40"
+                        className="w-auto h-auto opacity-40"
                       />
                     </div>
                   )}
@@ -991,6 +1033,8 @@ export default function ClientView({
               src={selectedImage}
               alt="Enlarged Capture"
               fill
+              // Tambahkan baris sizes ini:
+              sizes="(max-width: 1024px) 100vw, 896px"
               className="object-contain"
             />
           </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import useSWR, { mutate } from "swr"; // <-- Tambahkan useSWR di sini
+import useSWR, { mutate } from "swr";
 import { queryDeviceRegisterInfo, getDevices } from "@/services/deviceService";
 import { deviceTypes } from "@/utils/deviceType";
 import {
@@ -14,7 +14,6 @@ import {
   Info,
 } from "lucide-react";
 
-// DYNAMIC IMPORT MAP
 const MapPicker = dynamic(() => import("./MapPicker"), {
   ssr: false,
   loading: () => (
@@ -69,7 +68,6 @@ export default function ModalAddDevice({
 
   const [showMap, setShowMap] = useState(false);
 
-  // MENGAMBIL CACHE TABEL LYDAR UNTUK FALLBACK TIPE DEVICE
   const { data: lydarDevices } = useSWR("getAllDevicesTable", getDevices);
 
   const [isProcessFinished, setIsProcessFinished] = useState(false);
@@ -133,33 +131,25 @@ export default function ModalAddDevice({
   // SMART FETCHER: Mencari Tipe Device & Auto-Fill Data Lydar
   // =====================================================================
   const fetchAndSetDeviceInfo = async (sn: string) => {
-    // 1. CARI DATA DI CACHE SWR LYDAR UNTUK AUTO-FILL
     const existingInLydar = lydarDevices?.find((d: any) => d.deviceName === sn);
 
     if (existingInLydar) {
-      // Jika data ditemukan di Lydar, langsung isi otomatis form-nya!
       setNamaWp(existingInLydar.houseNumber || "");
       setAlamat(existingInLydar.address || "");
-      // Gunakan remark atau description tergantung format Lydar Anda
       setDeskripsi(existingInLydar.description || existingInLydar.remark || "");
-      // Koordinat (jika ada di Lydar)
       setLatitude(existingInLydar.latitude || existingInLydar.lat || "");
       setLongitude(existingInLydar.longitude || existingInLydar.lng || "");
       setNamaDevice(existingInLydar.deviceName || sn);
     }
 
-    // 2. AMBIL TIPE JARINGAN (WIFI/NBIOT) DARI API
     try {
       const response = await queryDeviceRegisterInfo(sn);
       if (response.data && response.data.accessType) {
         setDeviceInfo(response.data);
         return;
       }
-    } catch (error) {
-      // Abaikan error dan lanjut ke Plan B
-    }
+    } catch (error) {}
 
-    // 3. PLAN B TIPE JARINGAN: Curi dari tabel SWR
     if (existingInLydar && existingInLydar.networkType) {
       setDeviceInfo({ accessType: existingInLydar.networkType });
     } else {
@@ -171,7 +161,7 @@ export default function ModalAddDevice({
     setLoading(true);
     await fetchAndSetDeviceInfo(sn);
     setLoading(false);
-    setStep(2); // SELALU paksa pindah ke Step 2
+    setStep(2);
   };
 
   const handleNextStep1 = async () => {
@@ -185,7 +175,7 @@ export default function ModalAddDevice({
     await fetchAndSetDeviceInfo(serialNumber);
 
     setLoading(false);
-    setStep(2); // SELALU paksa pindah ke Step 2
+    setStep(2);
   };
   // =====================================================================
 
@@ -210,7 +200,6 @@ export default function ModalAddDevice({
     );
 
     try {
-      // PROSES 1: MEMBUAT MERCHANT POB
       updateStage(0, "loading");
       const payloadMerchant = {
         name: namaWp,
@@ -242,7 +231,6 @@ export default function ModalAddDevice({
       const merchantId = dataMerchant.data._id;
       updateStage(0, "success");
 
-      // PROSES 2: MENAUTKAN KE MERCHANT
       updateStage(1, "loading");
       const payloadDevicePOB = {
         merchant_id: merchantId,
@@ -280,7 +268,6 @@ export default function ModalAddDevice({
       }
       updateStage(1, "success");
 
-      // PROSES 3: DATABASE LOKAL (RELASI)
       updateStage(2, "loading");
       const payloadLokal = {
         merchantId: merchantId,
@@ -289,7 +276,6 @@ export default function ModalAddDevice({
         status: 1,
         wilayah: kota,
         serialNumber: serialNumber,
-        // Jika tidak ada deviceInfo, gunakan fallback "1"
         type: deviceTypes(deviceInfo?.accessType || 1).label,
       };
 
@@ -307,7 +293,6 @@ export default function ModalAddDevice({
       }
       updateStage(2, "success");
 
-      // Refresh tabel utama
       mutate("getAllDevicesTable");
       mutate("getLocalDevices");
     } catch (error: any) {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// Sesuaikan path import ini ke lokasi file deviceService.ts Anda
 import { getUnsyncedDevices } from "@/services/deviceService";
 
 export default function UnsyncedDeviceTable() {
@@ -20,7 +19,6 @@ export default function UnsyncedDeviceTable() {
     }
   };
 
-  // Jalankan saat komponen pertama kali dirender
   useEffect(() => {
     fetchUnsynced();
   }, []);
@@ -81,7 +79,6 @@ export default function UnsyncedDeviceTable() {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <button
-                    // Tombol ini akan kita fungsikan di Tahap 3
                     onClick={() =>
                       alert(
                         `Persiapan buka Modal Sinkronisasi untuk SN: ${device.deviceName}`,

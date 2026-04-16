@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/component/sidebar";
 import Navbar from "@/component/navbar";
-import SessionGuard from "@/component/SessionGuard"; // <-- Import
+import SessionGuard from "@/component/SessionGuard";
 
 export default function DeviceLayout({
   children,
@@ -14,13 +14,12 @@ export default function DeviceLayout({
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
-  // 1. Deteksi layar HP saat pertama kali web dimuat
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
-        setCollapsed(true); // HP: Tutup sidebar secara default
+        setCollapsed(true);
       } else {
-        setCollapsed(false); // PC/Laptop: Buka sidebar
+        setCollapsed(false);
       }
     };
 
@@ -29,7 +28,6 @@ export default function DeviceLayout({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // 2. Tutup sidebar di HP jika user nge-klik menu (pindah halaman)
   useEffect(() => {
     if (window.innerWidth < 768) {
       setCollapsed(true);
@@ -37,37 +35,31 @@ export default function DeviceLayout({
   }, [pathname]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 w-full relative">
-      {/* ================= OVERLAY GELAP DI MOBILE ================= */}
-      {/* Akan muncul menutupi layar saat Hamburger Menu diklik di HP */}
+    <div className="flex h-screen overflow-hidden bg-slate-50 relative">
       <SessionGuard />
+
+      {/* ================= OVERLAY GELAP DI MOBILE ================= */}
       {!collapsed && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity animate-in fade-in"
-          onClick={() => setCollapsed(true)} // Klik area gelap untuk menutup
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-200"
+          onClick={() => setCollapsed(true)}
         />
       )}
 
-      {/* ================= WRAPPER SIDEBAR RESPONSIVE ================= */}
       <div
-        className={`
-          fixed inset-y-0 left-0 z-50 h-full transform transition-transform duration-300 ease-in-out
-          md:relative md:translate-x-0
-          /* LOGIKA KUNCI:
-             Jika collapsed di HP: Geser 100% ke kiri (-translate-x-full) agar hilang dari layar
-             Jika collapsed di PC: (Di-handle oleh sidebar.tsx menjadi w-20)
-          */
-          ${collapsed ? "-translate-x-full" : "translate-x-0"}
+        className={`fixed md:relative top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out shrink-0
+          ${collapsed ? "-translate-x-full md:translate-x-0 md:w-20" : "translate-x-0 md:w-64"}
         `}>
-        <Sidebar collapsed={collapsed} />
+        {/* INI KUNCI PERBAIKANNYA: Melempar state & fungsi setCollapsed ke Sidebar */}
+        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
       </div>
 
-      {/* ================= KONTEN UTAMA & NAVBAR ================= */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0">
+      {/* ================= KONTEN UTAMA ================= */}
+      {/* flex-1 akan otomatis menyesuaikan ruang saat sidebar membesar/mengecil */}
+      <div className="flex-1 flex flex-col w-full h-full overflow-hidden relative transition-all duration-300">
         <Navbar collapsed={collapsed} setCollapsed={setCollapsed} />
 
-        {/* Padding diperkecil (p-4) di HP agar lebih lega */}
-        <main className="flex-1 overflow-y-auto w-full p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto w-full p-4 md:p-8 relative">
           {children}
         </main>
       </div>
