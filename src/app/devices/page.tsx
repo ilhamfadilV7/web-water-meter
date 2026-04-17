@@ -107,25 +107,15 @@ const DevicePage = () => {
       {/* ACTION BAR */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 w-full bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="relative w-full md:w-96">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" />
+
           <input
             type="text"
             placeholder="Cari nama WP, serial, atau alamat..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input input-bordered w-full pl-10 bg-slate-50 border-slate-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
+            className="input input-bordered w-full pl-10 bg-slate-50 border-slate-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all relative"
           />
-        </div>
-
-        <div className="hidden md:flex shrink-0 w-full md:w-auto">
-          <button
-            onClick={() => {
-              setSelectedUnsyncedSN(null);
-              setOpenModal(true);
-            }}
-            className="btn bg-sky-700 hover:bg-sky-800 text-white btn-md w-full md:w-auto shadow-sm border-none px-6">
-            + ADD DEVICE
-          </button>
         </div>
       </div>
 

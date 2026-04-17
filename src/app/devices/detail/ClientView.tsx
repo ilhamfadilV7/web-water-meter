@@ -15,6 +15,7 @@ import {
   AlertCircle,
   RefreshCw,
   Play,
+  Image as ImageIcon,
 } from "lucide-react";
 import { errorCode } from "@/utils/errorCode";
 
@@ -33,6 +34,16 @@ import {
 } from "@/services/deviceService";
 import { adjustMinusOneHour, formatToWIB } from "@/utils/date";
 import { getPictures } from "@/services/getPictureService";
+
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function ClientView({
   deviceName,
@@ -390,13 +401,14 @@ export default function ClientView({
                     ? "bg-white text-sky-700 shadow-sm ring-1 ring-slate-200"
                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
                 }`}>
-                <Image
+                {/* <Image
                   src={sui}
                   alt="icon"
                   width={16}
                   height={16}
                   className="w-auto h-auto opacity-70 grayscale peer-checked/galeri:grayscale-0 peer-checked/galeri:opacity-100 transition-all"
-                />
+                /> */}
+                <ImageIcon className="w-4 h-4 shrink-0" />
                 <span className="truncate">Galeri Gambar</span>
               </button>
 
@@ -429,10 +441,143 @@ export default function ClientView({
             {/* --- KONTEN 1: GRAFIK --- */}
             {activeTab === "grafik" && (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <p className="font-semibold text-slate-600 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-sky-500" /> Grafik
-                  Penggunaan (Coming Soon)
-                </p>
+                <div className="flex flex-col w-full">
+                  <div className="shrink-0 mb-6">
+                    <p className="font-semibold text-slate-800 text-lg flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-sky-600" /> Grafik
+                      Penggunaan Air
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Tren pembacaan total kubikasi meter air berdasarkan data
+                      capture terakhir.
+                    </p>
+                  </div>
+
+                  {/* Wadah Grafik */}
+                  <div className="w-full h-[350px] bg-slate-50/50 border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-inner">
+                    {loadingCapture ? (
+                      <div className="flex justify-center items-center h-full">
+                        <span className="loading loading-spinner text-sky-500"></span>
+                      </div>
+                    ) : captureDataList.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          // Kita me-reverse data agar tanggal tertua ada di kiri dan terbaru di kanan
+                          data={[...captureDataList].reverse().map((item) => ({
+                            waktu: new Date(item.createTime).toLocaleDateString(
+                              "id-ID",
+                              { day: "numeric", month: "short" },
+                            ),
+                            waktuLengkap: new Date(
+                              item.createTime,
+                            ).toLocaleString("id-ID"),
+                            totalMeter: item.data?.number || 0,
+                            pemakaian: item.data?.cloudIncrement || 0,
+                          }))}
+                          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <defs>
+                            {/* Definisi Warna Gradasi Air */}
+                            <linearGradient
+                              id="colorAir"
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1">
+                              <stop
+                                offset="5%"
+                                stopColor="#0ea5e9"
+                                stopOpacity={0.4}
+                              />
+                              <stop
+                                offset="95%"
+                                stopColor="#0ea5e9"
+                                stopOpacity={0}
+                              />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            vertical={false}
+                            stroke="#f1f5f9"
+                          />
+
+                          <XAxis
+                            dataKey="waktu"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{
+                              fill: "#64748b",
+                              fontSize: 11,
+                              fontWeight: 500,
+                            }}
+                            dy={10}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{
+                              fill: "#64748b",
+                              fontSize: 11,
+                              fontWeight: 500,
+                            }}
+                            dx={-10}
+                          />
+
+                          <RechartsTooltip
+                            contentStyle={{
+                              borderRadius: "12px",
+                              border: "1px solid #e2e8f0",
+                              boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                              backgroundColor: "rgba(255, 255, 255, 0.95)",
+                            }}
+                            labelStyle={{
+                              color: "#0f172a",
+                              fontWeight: "bold",
+                              marginBottom: "4px",
+                            }}
+                            labelFormatter={(label, payload) =>
+                              payload?.[0]?.payload?.waktuLengkap || label
+                            }
+                            formatter={(value: any, name: string) => [
+                              <span
+                                key={name}
+                                className="font-semibold text-sky-700">
+                                {value} m³
+                              </span>,
+                              name === "totalMeter"
+                                ? "Total Meter"
+                                : "Pemakaian (+)",
+                            ]}
+                          />
+
+                          <Area
+                            type="monotone"
+                            dataKey="totalMeter"
+                            stroke="#0ea5e9"
+                            strokeWidth={3}
+                            fillOpacity={1}
+                            fill="url(#colorAir)"
+                            activeDot={{
+                              r: 6,
+                              fill: "#0ea5e9",
+                              stroke: "#ffffff",
+                              strokeWidth: 2,
+                              className: "shadow-sm",
+                            }}
+                            animationDuration={1500}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex flex-col justify-center items-center h-full text-slate-400 gap-2">
+                        <Activity className="w-8 h-8 opacity-20" />
+                        <span className="text-sm font-medium">
+                          Belum ada data grafik tersedia.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
