@@ -518,7 +518,9 @@ export default function ModalAddDevice({
           {step === 3 && (
             <div className="space-y-4">
               <p className="text-sm text-slate-500 font-medium mb-4">
-                Langkah terakhir, lengkapi data untuk sistem POB.
+                Langkah terakhir, lengkapi data untuk sinkronisasi device ke
+                sistem Pajak Lokal. Pastikan semua data sudah benar sebelum
+                memproses sinkronisasi.
               </p>
 
               <div className="flex gap-4">
