@@ -271,7 +271,7 @@ export default function ModalAddDevice({
       updateStage(2, "loading");
       const payloadLokal = {
         merchantId: merchantId,
-        deviceName: namadevice,
+        deviceName: serialNumber,
         deviceId: newDeviceId,
         status: 1,
         wilayah: kota,
