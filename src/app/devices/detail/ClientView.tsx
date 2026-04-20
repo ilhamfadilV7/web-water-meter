@@ -183,6 +183,7 @@ export default function ClientView({
     setIsSyncingNow(true);
     try {
       const result = await startSync(deviceName);
+      console.log("Sync Result:", result);
 
       if (result.success || result.code === 200) {
         showCustomAlert("success", "Perintah sinkronisasi berhasil dikirim!");

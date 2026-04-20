@@ -1,6 +1,5 @@
 const baseUrl = process.env.NEXT_PUBLIC_API_LYDAR;
 const urlPob = process.env.NEXT_PUBLIC_LOCAL_SERVER;
-const proxyUrl = "/api/proxy-lokal";
 
 export async function getDevices() {
   const token = localStorage.getItem("access_token");
@@ -213,7 +212,7 @@ export async function getSyncLogs(deviceName: string) {
 }
 
 export async function startSync(deviceName: string) {
-  const res = await fetch(`${proxyUrl}/api/wm/sync/device`, {
+  const res = await fetch(`${urlPob}/api/wm/sync/device`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -225,10 +224,8 @@ export async function startSync(deviceName: string) {
     }),
   });
 
-  console.log(res);
-
   if (!res.ok) {
-    throw new Error("Gagal memicu sinkronisasi");
+    throw new Error(`Gagal memicu sinkronisasi untuk SN: ${deviceName}`);
   }
 
   return res.json();
@@ -283,23 +280,34 @@ export async function getLocalDevices() {
   return result.devices || [];
 }
 
-// Fungsi utama: Membandingkan Lydar vs Lokal
 export async function getUnsyncedDevices() {
+  console.log("🔥 HALO! FUNGSI GET UNSYNCED MULAI JALAN!");
   try {
     // 1. Tarik semua data dari Lydar
+    // Asumsi: getDevices() sudah mengembalikan Array secara langsung
     const lydarDevices = await getDevices();
 
     // 2. Tarik semua data dari DB Lokal 187
+    // Asumsi: getLocalDevices() sudah mengembalikan Array secara langsung
     const localDevices = await getLocalDevices();
+    console.log("SAMPEL DATA LOKAL PERTAMA:", localDevices[0]);
 
-    // 3. Ekstrak Serial Number dari DB Lokal ke dalam bentuk array sederhana
-    // Sesuaikan "serialNumber" dengan nama field di database lokal Anda
-    const localSerialNumbers = localDevices.map((dev: any) => dev.serialNumber);
+    // 3. Ekstrak Serial Number dari DB Lokal
+    // PERBAIKAN: Gunakan dev.serial_number (sesuai nama kolom di DB Anda)
+    // Jika masih gagal, coba ganti jadi dev.serialNumber
+
+    const localSerialNumbers = localDevices.map((dev: any) =>
+      String(dev.serial_number).trim(),
+    );
 
     // 4. Lakukan Filtering
     const unsyncedList = lydarDevices.filter((lydarDev: any) => {
-      // Jika deviceName (SN) Lydar TIDAK ADA di array lokal, maka masukkan ke list unsynced
-      return !localSerialNumbers.includes(lydarDev.deviceName);
+      // Di Lydar, serial number aslinya tersimpan di field "deviceName"
+      const targetSN = lydarDev.deviceName;
+
+      // Cek apakah targetSN (dari Lydar) ADA di dalam array localSerialNumbers
+      // Jika TIDAK ADA (!), masukkan ke daftar unsynced
+      return !localSerialNumbers.includes(targetSN);
     });
 
     return unsyncedList;

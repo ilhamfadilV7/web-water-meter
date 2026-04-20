@@ -41,9 +41,7 @@ const DevicePage = () => {
     error: localError,
   } = useSWR("getLocalDevices", getLocalDevices);
 
-  const localSerialNumbers = (localData || []).map(
-    (d: any) => d.device_name || d.deviceName || d.serialNumber,
-  );
+  const localSerialNumbers = (localData || []).map((d: any) => d.serial_number);
 
   // ==============================================================
   // 2. AMBIL DATA LYDAR & TENTUKAN STATUS SINKRONISASI

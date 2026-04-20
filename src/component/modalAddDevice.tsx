@@ -237,7 +237,7 @@ export default function ModalAddDevice({
         devices: [
           {
             name: namadevice || serialNumber,
-            pmt: "server",
+            pmt: "Water Meter Reader",
             device_metode: "API",
             sn: serialNumber,
             kode: "-",
@@ -271,7 +271,7 @@ export default function ModalAddDevice({
       updateStage(2, "loading");
       const payloadLokal = {
         merchantId: merchantId,
-        deviceName: serialNumber,
+        deviceName: namadevice,
         deviceId: newDeviceId,
         status: 1,
         wilayah: kota,
@@ -518,7 +518,7 @@ export default function ModalAddDevice({
           {step === 3 && (
             <div className="space-y-4">
               <p className="text-sm text-slate-500 font-medium mb-4">
-                Langkah terakhir, lengkapi pengaturan pajak untuk sistem POB.
+                Langkah terakhir, lengkapi data untuk sistem POB.
               </p>
 
               <div className="flex gap-4">
@@ -527,7 +527,7 @@ export default function ModalAddDevice({
                     Provinsi
                   </legend>
                   <select className="select select-sm select-bordered w-full bg-slate-50">
-                    <option value="demo">Demo</option>
+                    <option value="demo">Sumatera Utara</option>
                   </select>
                 </fieldset>
                 <fieldset className="fieldset flex-1">
@@ -538,7 +538,8 @@ export default function ModalAddDevice({
                     value={kota}
                     onChange={(e) => setKota(e.target.value)}
                     className="select select-sm select-bordered w-full bg-slate-50">
-                    <option value="pob_demo">Demo</option>
+                    <option value="asahan">Asahan</option>
+                    <option value="labuhanbatu">Labuhan Batu</option>
                   </select>
                 </fieldset>
               </div>
