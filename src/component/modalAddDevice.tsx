@@ -14,6 +14,8 @@ import {
   Info,
 } from "lucide-react";
 
+const urlPob = process.env.NEXT_PUBLIC_LOCAL_SERVER;
+
 const MapPicker = dynamic(() => import("./MapPicker"), {
   ssr: false,
   loading: () => (
@@ -279,7 +281,7 @@ export default function ModalAddDevice({
         type: deviceTypes(deviceInfo?.accessType || 1).label,
       };
 
-      const resLokal = await fetch(`/api/proxy-lokal/api/device/register`, {
+      const resLokal = await fetch(`${urlPob}/api/device/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payloadLokal),
