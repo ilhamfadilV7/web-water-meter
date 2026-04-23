@@ -69,6 +69,28 @@ export default function ClientView({
     message: string;
   } | null>(null);
 
+  // --- STATE UNTUK TOAST NOTIFICATION MODERN ---
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success",
+  ) => {
+    setToast({ show: true, message, type });
+    // Hilang otomatis dalam 3.5 detik
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 3500);
+  };
+
   const [activeTab, setActiveTab] = useState("pengaturan");
 
   const showCustomAlert = (type: "success" | "error", message: string) => {
@@ -257,28 +279,6 @@ export default function ClientView({
     const startMs = new Date(start).getTime();
     const finishMs = new Date(finish).getTime();
     return ((finishMs - startMs) / 1000).toFixed(1);
-  };
-
-  // --- STATE UNTUK TOAST NOTIFICATION MODERN ---
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({
-    show: false,
-    message: "",
-    type: "success",
-  });
-
-  const showToast = (
-    message: string,
-    type: "success" | "error" = "success",
-  ) => {
-    setToast({ show: true, message, type });
-    // Hilang otomatis dalam 3.5 detik
-    setTimeout(() => {
-      setToast({ show: false, message: "", type: "success" });
-    }, 3500);
   };
 
   return (

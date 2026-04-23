@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
       {
         // Prod
         source: "/api-bridge/:path*",
-        destination: "http://127.0.0.1:3000/:path*",
+        destination: "http://127.0.0.1:3130/:path*",
       },
     ];
   },
