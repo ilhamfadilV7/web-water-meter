@@ -13,10 +13,15 @@ const nextConfig: NextConfig = {
 
   async rewrites() {
     return [
+      // {
+      //   // Dev
+      //   source: "/api-bridge/:path*",
+      //   destination: "http://10.20.10.187:3130/:path*",
+      // },
       {
-        // GANTI NAMA SUMBERNYA MENJADI INI:
+        // Prod
         source: "/api-bridge/:path*",
-        destination: "http://127.0.0.1:3130/:path*",
+        destination: "http://127.0.0.1:3000/:path*",
       },
     ];
   },

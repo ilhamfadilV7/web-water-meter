@@ -22,7 +22,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Devices", href: "/devices", icon: BarChart3 },
-    // { name: "Settings", href: "/settings", icon: Settings },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   return (

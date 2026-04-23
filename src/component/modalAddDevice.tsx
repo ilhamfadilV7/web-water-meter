@@ -51,14 +51,13 @@ export default function ModalAddDevice({
   const [serialNumber, setSerialNumber] = useState("");
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
 
-  // state form data
   const [namaWp, setNamaWp] = useState("");
   const [alamat, setAlamat] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
-  const [provinsi, setProvinsi] = useState("pob_demo");
-  const [kota, setKota] = useState("pob_demo");
+  const [provinsi, setProvinsi] = useState("");
+  const [kota, setKota] = useState(""); // <-- State awalnya "" (Kosong)
   const [kategori, setKategori] = useState("AIR BAWAH TANAH");
   const [persentase, setPersentase] = useState("");
   const [tipepajak, setTipePajak] = useState("include");
@@ -115,6 +114,7 @@ export default function ModalAddDevice({
       setLatitude("");
       setLongitude("");
       setPersentase("");
+      setKota("");
       setNop("");
       setKontak("");
       setTglPasang("");
@@ -129,9 +129,6 @@ export default function ModalAddDevice({
     }
   }, [isOpen, selectedSN]);
 
-  // =====================================================================
-  // SMART FETCHER: Mencari Tipe Device & Auto-Fill Data Lydar
-  // =====================================================================
   const fetchAndSetDeviceInfo = async (sn: string) => {
     const existingInLydar = lydarDevices?.find((d: any) => d.deviceName === sn);
 
@@ -194,6 +191,13 @@ export default function ModalAddDevice({
   };
 
   const handleSave = async () => {
+    if (!kota) {
+      setErrorMsg("Harap pilih Wilayah / Kota terlebih dahulu!");
+      return;
+    }
+
+    setErrorMsg("");
+
     setStep(4);
     setIsProcessFinished(false);
     setProcessHasError(false);
@@ -278,6 +282,7 @@ export default function ModalAddDevice({
         status: 1,
         wilayah: kota,
         serialNumber: serialNumber,
+        nama_wp: namaWp,
         type: deviceTypes(deviceInfo?.accessType || 1).label,
       };
 
@@ -534,14 +539,26 @@ export default function ModalAddDevice({
                     <option value="demo">Sumatera Utara</option>
                   </select>
                 </fieldset>
+
+                {/* ✅ UBAH DI SINI: REQUIRED DAN PLACEHOLDER */}
                 <fieldset className="fieldset flex-1">
                   <legend className="fieldset-legend font-medium text-slate-600">
-                    Kota
+                    Kota <span className="text-red-500 ml-1">*</span>
                   </legend>
                   <select
                     value={kota}
-                    onChange={(e) => setKota(e.target.value)}
-                    className="select select-sm select-bordered w-full bg-slate-50">
+                    onChange={(e) => {
+                      setKota(e.target.value);
+                      if (errormsg) setErrorMsg("");
+                    }}
+                    className={`select select-sm select-bordered w-full bg-slate-50 ${
+                      !kota && errormsg
+                        ? "border-red-500 focus:border-red-500 bg-red-50/30"
+                        : ""
+                    }`}>
+                    <option value="" disabled>
+                      -- Pilih Kota --
+                    </option>
                     <option value="asahan">Asahan</option>
                     <option value="labuhanbatu">Labuhan Batu</option>
                   </select>

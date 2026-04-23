@@ -166,12 +166,12 @@ export default function ClientView({
         await mutate(["deviceInfo", deviceName]);
         setSelectedQuality(null);
 
-        showCustomAlert("success", "Pengaturan berhasil disimpan!");
+        showToast("Pengaturan berhasil disimpan!", "success");
       } else {
-        showCustomAlert("error", "Gagal menyimpan pengaturan: " + result.msg);
+        showToast("Gagal menyimpan pengaturan.", "error");
       }
     } catch (error) {
-      showCustomAlert("error", "Terjadi kesalahan saat menghubungi server.");
+      showToast("Terjadi kesalahan saat menghubungi server.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -186,7 +186,7 @@ export default function ClientView({
       console.log("Sync Result:", result);
 
       if (result.success || result.code === 200) {
-        showCustomAlert("success", "Perintah sinkronisasi berhasil dikirim!");
+        showToast("Perintah sinkronisasi berhasil dikirim!", "success");
 
         mutate(["syncLogs", deviceName]);
       } else {
@@ -257,6 +257,28 @@ export default function ClientView({
     const startMs = new Date(start).getTime();
     const finishMs = new Date(finish).getTime();
     return ((finishMs - startMs) / 1000).toFixed(1);
+  };
+
+  // --- STATE UNTUK TOAST NOTIFICATION MODERN ---
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success",
+  ) => {
+    setToast({ show: true, message, type });
+    // Hilang otomatis dalam 3.5 detik
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 3500);
   };
 
   return (
@@ -1242,6 +1264,48 @@ export default function ClientView({
                 Tutup
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* --- TOAST NOTIFICATION MODERN (MUNCUL DI ATAS TENGAH) --- */}
+      {toast.show && (
+        <div className="toast toast-top toast-center z-[9999] animate-fade-in-down mt-4">
+          <div
+            className={`flex items-center gap-3 px-6 py-3.5 rounded-full shadow-2xl text-white font-medium transition-all duration-300 ${
+              toast.type === "success"
+                ? "bg-emerald-500 shadow-emerald-500/40"
+                : "bg-red-500 shadow-red-500/40"
+            }`}>
+            {toast.type === "success" ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 shrink-0 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 shrink-0 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            )}
+            <span className="tracking-wide">{toast.message}</span>
           </div>
         </div>
       )}
