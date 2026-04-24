@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { AlarmClockPlus, Plus, DollarSign } from "lucide-react";
 
+// --- KONFIGURASI API ---
 const urlPob = process.env.NEXT_PUBLIC_LOCAL_SERVER || "/api-bridge";
 
+// ============================================================================
+// KOMPONEN: COUNTDOWN TIMER (TETAP SAMA)
+// ============================================================================
 const CountdownTimer = ({
   targetDate,
   onComplete,
@@ -58,6 +63,7 @@ const CountdownTimer = ({
     intervalId = setInterval(updateTimer, 1000);
 
     return () => clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetDate]);
 
   if (timeLeft === "-")
@@ -85,9 +91,14 @@ export default function SettingsPage() {
   const [tariffs, setTariffs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [devices, setDevices] = useState<any[]>([]);
+  const [wilayah, setWilayah] = useState<any[]>([]);
 
+  // -------------------------------------------------------------
+  // STATE: JADWAL SINKRONISASI
+  // -------------------------------------------------------------
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isDeviceOpen, setIsDeviceOpen] = useState(false);
   const [formData, setFormData] = useState({
     id: "",
     device_name: "",
@@ -95,15 +106,27 @@ export default function SettingsPage() {
     description: "",
     status: "active",
   });
-
-  const [cronUI, setCronUI] = useState({
-    type: "hourly",
-    time: "12:00",
-  });
-
+  const [cronUI, setCronUI] = useState({ type: "hourly", time: "12:00" });
   const [logModalData, setLogModalData] = useState<any | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null); // <-- BARU: Untuk konfirmasi hapus
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  // -------------------------------------------------------------
+  // STATE: TARIF AIR WILAYAH
+  // -------------------------------------------------------------
+  const [isTariffModalOpen, setIsTariffModalOpen] = useState(false);
+  const [isEditTariffMode, setIsEditTariffMode] = useState(false);
+  const [tariffFormData, setTariffFormData] = useState({
+    id: "",
+    wilayah: "",
+    harga: "", // format string untuk memudahkan input text, nanti diconvert ke number
+  });
+  const [deleteTariffConfirmId, setDeleteTariffConfirmId] = useState<
+    string | null
+  >(null);
+
+  // -------------------------------------------------------------
+  // STATE: TOAST NOTIFICATION
+  // -------------------------------------------------------------
   const [toast, setToast] = useState<{
     show: boolean;
     message: string;
@@ -145,6 +168,8 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success) {
         setTariffs(data.data || []);
+      } else {
+        setTariffs([]);
       }
     } catch (error) {
       console.error("Gagal mengambil tarif:", error);
@@ -174,11 +199,11 @@ export default function SettingsPage() {
     loadData();
   }, []);
 
+  // -------------------------------------------------------------
+  // HANDLERS: JADWAL SINKRONISASI
+  // -------------------------------------------------------------
   const parseCronToUI = (cronString: string) => {
-    if (cronString === "0 * * * *") {
-      return { type: "hourly", time: "12:00" };
-    }
-
+    if (cronString === "0 * * * *") return { type: "hourly", time: "12:00" };
     const dailyMatch = cronString.match(
       /^(\d{1,2})\s+(\d{1,2})\s+\*\s+\*\s+\*$/,
     );
@@ -187,7 +212,6 @@ export default function SettingsPage() {
       const h = dailyMatch[2].padStart(2, "0");
       return { type: "daily", time: `${h}:${m}` };
     }
-
     return { type: "custom", time: "12:00" };
   };
 
@@ -200,8 +224,8 @@ export default function SettingsPage() {
     return formData.schedule;
   };
 
-  // --- HANDLERS (FUNGSI CRUD) ---
   const handleOpenModal = (schedule: any = null) => {
+    setIsDeviceOpen(false);
     if (schedule) {
       setIsEditMode(true);
       setFormData({
@@ -242,7 +266,6 @@ export default function SettingsPage() {
       const selectedDevice = devices.find(
         (d) => d.serial_number === formData.device_name,
       );
-
       const namaWpTarget = selectedDevice ? selectedDevice.nama_wp : "N/A";
 
       const payload = isEditMode
@@ -279,7 +302,6 @@ export default function SettingsPage() {
 
   const executeDelete = async () => {
     if (!deleteConfirmId) return;
-
     try {
       const res = await fetch(`${urlPob}/api/schedules/${deleteConfirmId}`, {
         method: "DELETE",
@@ -298,10 +320,89 @@ export default function SettingsPage() {
     }
   };
 
+  // -------------------------------------------------------------
+  // HANDLERS: TARIF AIR WILAYAH (CRUD BARU)
+  // -------------------------------------------------------------
+  const handleOpenTariffModal = (tariff: any = null) => {
+    if (tariff) {
+      setIsEditTariffMode(true);
+      setTariffFormData({
+        id: tariff.id,
+        wilayah: tariff.wilayah,
+        harga: tariff.harga.toString(),
+      });
+    } else {
+      setIsEditTariffMode(false);
+      setTariffFormData({
+        id: "",
+        wilayah: "",
+        harga: "",
+      });
+    }
+    setIsTariffModalOpen(true);
+  };
+
+  const handleSubmitTariff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const method = isEditTariffMode ? "PUT" : "POST";
+      const endpoint = isEditTariffMode
+        ? `${urlPob}/api/harga/${tariffFormData.id}`
+        : `${urlPob}/api/harga`;
+
+      const payload = {
+        wilayah: tariffFormData.wilayah,
+        harga: Number(tariffFormData.harga),
+      };
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      if (result.success || res.ok) {
+        showToast(
+          isEditTariffMode
+            ? "Tarif berhasil diperbarui!"
+            : "Tarif baru berhasil ditambahkan!",
+          "success",
+        );
+        setIsTariffModalOpen(false);
+        fetchTariffs();
+      } else {
+        showToast(result.message || "Gagal menyimpan data tarif.", "error");
+      }
+    } catch (error) {
+      showToast("Terjadi kesalahan jaringan, periksa server.", "error");
+    }
+  };
+
+  const executeDeleteTariff = async () => {
+    if (!deleteTariffConfirmId) return;
+    try {
+      const res = await fetch(`${urlPob}/api/harga/${deleteTariffConfirmId}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
+      if (result.success || res.ok) {
+        showToast("Tarif berhasil dihapus permanen.", "success");
+        fetchTariffs();
+      } else {
+        showToast("Gagal menghapus tarif.", "error");
+      }
+    } catch (error) {
+      showToast("Terjadi kesalahan server saat menghapus tarif.", "error");
+    } finally {
+      setDeleteTariffConfirmId(null);
+    }
+  };
+
   // --- RENDER UI ---
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 relative">
-      {/* --- TOAST NOTIFICATION MODERN (MUNCUL DI ATAS TENGAH) --- */}
+      {/* --- TOAST NOTIFICATION MODERN --- */}
       {toast.show && (
         <div className="toast toast-top toast-center z-[9999] animate-fade-in-down mt-4">
           <div
@@ -361,7 +462,6 @@ export default function SettingsPage() {
               ? "bg-white border border-gray-200 shadow-sm text-primary font-semibold"
               : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium border border-transparent"
           }`}>
-          {/* Ikon Jam (Clock) */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-4 w-4"
@@ -385,7 +485,6 @@ export default function SettingsPage() {
               ? "bg-white border border-gray-200 shadow-sm text-primary font-semibold"
               : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium border border-transparent"
           }`}>
-          {/* Ikon Rupiah / Harga (Currency) */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-4 w-4"
@@ -409,7 +508,9 @@ export default function SettingsPage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
-          {/* --- TAB: SCHEDULES --- */}
+          {/* =====================================================================
+              TAB 1: SCHEDULES (JADWAL)
+          ====================================================================== */}
           {activeTab === "schedules" && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -417,9 +518,10 @@ export default function SettingsPage() {
                   Daftar Jadwal (Cron Job)
                 </h2>
                 <button
-                  className="btn btn-primary shadow-md shadow-primary/30"
+                  className="btn btn-md bg-sky-600 hover:bg-sky-700 text-white shadow-lg hover:shadow-sky-500/30 border-none"
                   onClick={() => handleOpenModal()}>
-                  + Tambah Jadwal
+                  <AlarmClockPlus className="w-4 h-4" />
+                  Buat Scheduler
                 </button>
               </div>
 
@@ -506,7 +608,6 @@ export default function SettingsPage() {
                               onClick={() => handleOpenModal(item)}>
                               Edit
                             </button>
-                            {/* PANGGIL MODAL KONFIRMASI HAPUS, BUKAN WINDOW.CONFIRM */}
                             <button
                               className="btn btn-sm btn-ghost hover:bg-red-50 hover:text-red-600 text-gray-500"
                               onClick={() => setDeleteConfirmId(item.id)}>
@@ -518,7 +619,7 @@ export default function SettingsPage() {
                     ) : (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={7}
                           className="text-center py-8 text-gray-400 italic">
                           Tidak ada jadwal yang aktif.
                         </td>
@@ -530,15 +631,20 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* --- TAB: TARIFFS --- */}
+          {/* =====================================================================
+              TAB 2: TARIFFS (TARIF AIR WILAYAH)
+          ====================================================================== */}
           {activeTab === "tariffs" && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">
                   Daftar Harga Tarif Air
                 </h2>
-                <button className="btn btn-outline" disabled>
-                  + Tambah Tarif (Coming Soon)
+                <button
+                  className="btn btn-md bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:shadow-emerald-500/30 border-none"
+                  onClick={() => handleOpenTariffModal()}>
+                  <Plus className="w-4 h-4" />
+                  Tambah Tarif
                 </button>
               </div>
               <div className="overflow-x-auto">
@@ -547,29 +653,54 @@ export default function SettingsPage() {
                     <tr>
                       <th>ID</th>
                       <th>Wilayah</th>
-                      <th>Harga Per m³</th>
+                      <th>Tarif Per m³</th>
                       <th>Terakhir Diupdate</th>
+                      <th className="text-right">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {tariffs.map((item) => (
-                      <tr key={item.id}>
-                        <td className="text-gray-500">{item.id}</td>
-                        <td className="capitalize font-medium text-gray-700">
-                          {item.wilayah.replace("_", " ")}
-                        </td>
-                        <td className="font-bold text-green-600 bg-green-50/50 rounded-lg">
-                          {new Intl.NumberFormat("id-ID", {
-                            style: "currency",
-                            currency: "IDR",
-                            maximumFractionDigits: 0,
-                          }).format(Number(item.harga))}
-                        </td>
-                        <td className="text-sm text-gray-500">
-                          {new Date(item.updated_time).toLocaleString("id-ID")}
+                    {tariffs.length > 0 ? (
+                      tariffs.map((item) => (
+                        <tr key={item.id} className="hover">
+                          <td className="text-gray-500">{item.id}</td>
+                          <td className="capitalize font-medium text-gray-700">
+                            {item.wilayah.replace("_", " ")}
+                          </td>
+                          <td className="font-bold text-green-600 bg-green-50/50 rounded-lg">
+                            {new Intl.NumberFormat("id-ID", {
+                              style: "currency",
+                              currency: "IDR",
+                              maximumFractionDigits: 0,
+                            }).format(Number(item.harga))}
+                          </td>
+                          <td className="text-sm text-gray-500">
+                            {new Date(item.updated_time).toLocaleString(
+                              "id-ID",
+                            )}
+                          </td>
+                          <td className="text-right space-x-2">
+                            <button
+                              className="btn btn-sm btn-ghost hover:bg-blue-50 hover:text-blue-600 text-gray-500"
+                              onClick={() => handleOpenTariffModal(item)}>
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-sm btn-ghost hover:bg-red-50 hover:text-red-600 text-gray-500"
+                              onClick={() => setDeleteTariffConfirmId(item.id)}>
+                              Hapus
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="text-center py-8 text-gray-400 italic">
+                          Belum ada data tarif yang tersimpan.
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -578,7 +709,9 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* --- MODAL KONFIRMASI HAPUS (MODERN CLEAN) --- */}
+      {/* =====================================================================
+          MODAL: KONFIRMASI HAPUS JADWAL
+      ====================================================================== */}
       {deleteConfirmId && (
         <div className="modal modal-open bg-black/40 backdrop-blur-sm transition-all">
           <div className="modal-box max-w-sm text-center">
@@ -620,7 +753,53 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* --- MODAL FORM JADWAL --- */}
+      {/* =====================================================================
+          MODAL: KONFIRMASI HAPUS TARIF
+      ====================================================================== */}
+      {deleteTariffConfirmId && (
+        <div className="modal modal-open bg-black/40 backdrop-blur-sm transition-all">
+          <div className="modal-box max-w-sm text-center">
+            <div className="flex justify-center mb-4">
+              <div className="bg-red-100 p-3 rounded-full text-red-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h3 className="font-bold text-lg text-gray-800">Hapus Tarif?</h3>
+            <p className="py-2 text-gray-500 text-sm">
+              Apakah Anda yakin ingin menghapus data tarif ini? Tindakan ini
+              tidak dapat dibatalkan.
+            </p>
+            <div className="flex justify-center gap-3 mt-6">
+              <button
+                className="btn btn-ghost px-6"
+                onClick={() => setDeleteTariffConfirmId(null)}>
+                Batal
+              </button>
+              <button
+                className="btn border-none bg-red-500 hover:bg-red-600 text-white px-6 shadow-lg shadow-red-500/30"
+                onClick={executeDeleteTariff}>
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          MODAL: FORM JADWAL SINKRONISASI
+      ====================================================================== */}
       {isModalOpen && (
         <div className="modal modal-open bg-black/30 backdrop-blur-sm">
           <div className="modal-box border-t-4 border-primary">
@@ -633,26 +812,99 @@ export default function SettingsPage() {
                   <label className="label font-medium text-gray-700">
                     <span className="label-text">Pilih Device</span>
                   </label>
-                  <select
-                    required
-                    className="select select-bordered w-full bg-gray-50 focus:bg-white transition-colors text-base"
-                    value={formData.device_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, device_name: e.target.value })
-                    }>
-                    <option value="" disabled>
-                      -- Pilih Device --
-                    </option>
-                    {devices.map((dev) => (
-                      <option
-                        key={dev.device_name}
-                        value={dev.device_name}
-                        className="text-sm">
-                        Nama Wp: {dev.nama_wp || "N/A"} {" | "}{" "}
-                        {dev.wilayah || "N/A"}
-                      </option>
-                    ))}
-                  </select>
+
+                  {/* CUSTOM DROPDOWN SELECT (REACT CONTROLLED) */}
+                  <div
+                    className="relative w-full"
+                    onBlur={(e) => {
+                      // Ini fitur keren: Jika klik di luar area, otomatis tertutup
+                      if (!e.currentTarget.contains(e.relatedTarget)) {
+                        setIsDeviceOpen(false);
+                      }
+                    }}>
+                    <div
+                      tabIndex={0}
+                      role="button"
+                      onClick={() => setIsDeviceOpen((prev) => !prev)}
+                      className="btn btn-outline w-full justify-between bg-gray-50 border-gray-300 hover:bg-white hover:border-primary normal-case font-normal text-left h-auto py-2.5">
+                      {formData.device_name ? (
+                        <div className="flex flex-col items-start leading-tight">
+                          <span className="font-bold text-gray-800">
+                            Nama WP:{" "}
+                            {devices.find(
+                              (d) => d.serial_number === formData.device_name,
+                            )?.nama_wp || "N/A"}
+                          </span>
+                          <span className="text-[11px] text-gray-500 mt-0.5">
+                            Wilayah:{" "}
+                            {devices.find(
+                              (d) => d.serial_number === formData.device_name,
+                            )?.wilayah || "N/A"}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">
+                          -- Pilih Device --
+                        </span>
+                      )}
+
+                      {/* Panah akan berputar cantik saat diklik */}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className={`h-4 w-4 opacity-50 shrink-0 transition-transform duration-200 ${isDeviceOpen ? "rotate-180" : ""}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+
+                    <ul
+                      className={`absolute left-0 top-[105%] z-[100] flex flex-col p-2 shadow-2xl bg-white border border-gray-100 rounded-xl w-full max-h-64 overflow-y-auto origin-top transition-all duration-200 ${
+                        isDeviceOpen
+                          ? "opacity-100 scale-y-100 pointer-events-auto"
+                          : "opacity-0 scale-y-95 pointer-events-none"
+                      }`}>
+                      {devices.length > 0 ? (
+                        devices.map((dev, index) => (
+                          <li
+                            key={`${dev.serial_number}-${index}`}
+                            className="mb-1 w-full block">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData({
+                                  ...formData,
+                                  device_name: dev.serial_number,
+                                });
+                                setIsDeviceOpen(false); // Tutup menu setelah dipilih
+                              }}
+                              className={`w-full flex flex-col items-start p-3 rounded-lg hover:bg-sky-50 transition-colors ${
+                                formData.device_name === dev.serial_number
+                                  ? "bg-sky-50 border-l-4 border-sky-600"
+                                  : ""
+                              }`}>
+                              <div className="text-sm font-bold text-gray-800">
+                                Nama WP: {dev.nama_wp || "N/A"}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Wilayah: {dev.wilayah || "N/A"}
+                              </div>
+                            </button>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="p-4 text-center text-gray-400 italic text-sm w-full">
+                          Tidak ada device tersinkron.
+                        </li>
+                      )}
+                    </ul>
+                  </div>
                 </div>
               )}
               <div className="form-control p-4 bg-blue-50/50 rounded-xl border border-blue-100">
@@ -714,7 +966,6 @@ export default function SettingsPage() {
                   )}
                 </div>
 
-                {/* PREVIEW HASIL */}
                 <div className="mt-3 text-right">
                   <span className="text-[11px] text-gray-400 font-mono">
                     Output ke API:{" "}
@@ -724,7 +975,7 @@ export default function SettingsPage() {
                   </span>
                 </div>
               </div>
-              {/* ------------------------------- */}
+
               <div className="form-control">
                 <label className="label font-medium text-gray-700">
                   <span className="label-text">Deskripsi</span>
@@ -759,14 +1010,96 @@ export default function SettingsPage() {
               <div className="modal-action mt-8 pt-4 border-t border-gray-100">
                 <button
                   type="button"
-                  className="btn btn-ghost text-gray-500 hover:bg-gray-100"
+                  className="btn border-none bg-slate-200 hover:bg-slate-300 text-slate-700 px-6"
                   onClick={() => setIsModalOpen(false)}>
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary shadow-lg shadow-primary/30 px-8">
+                  className="btn btn-md bg-sky-600 hover:bg-sky-700 text-white shadow-lg hover:shadow-sky-500/30 border-none">
                   Simpan Jadwal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          MODAL: FORM TARIF AIR
+      ====================================================================== */}
+      {isTariffModalOpen && (
+        <div className="modal modal-open bg-black/30 backdrop-blur-sm">
+          <div className="modal-box border-t-4 border-emerald-500">
+            <h3 className="font-bold text-xl mb-6 text-gray-800">
+              {isEditTariffMode ? "Edit Tarif Air" : "Tambah Tarif Air Baru"}
+            </h3>
+            <form onSubmit={handleSubmitTariff} className="space-y-5">
+              <div className="form-control">
+                <label className="label font-medium text-gray-700">
+                  <span className="label-text">Wilayah / Kota</span>
+                </label>
+
+                {/* DITAMBAHKAN CLASSNAME DAISYUI DAN REQUIRED */}
+                <select
+                  required
+                  className="select select-bordered w-full bg-gray-50 focus:bg-white transition-colors font-medium"
+                  value={tariffFormData.wilayah}
+                  onChange={(e) =>
+                    setTariffFormData({
+                      ...tariffFormData,
+                      wilayah: e.target.value,
+                    })
+                  }>
+                  {/* OPTION PERTAMA DIBUAT DISABLED AGAR JADI PLACEHOLDER */}
+                  <option value="" disabled>
+                    -- Pilih Wilayah --
+                  </option>
+                  <option value="asahan">Asahan</option>
+                  <option value="labuhanbatu">Labuhanbatu</option>
+                  <option value="medan">Medan</option>
+                  <option value="deliserdang">Deliserdang</option>
+                </select>
+              </div>
+
+              <div className="form-control">
+                <label className="label font-medium text-gray-700">
+                  <span className="label-text">
+                    Harga Tarif Per Meter Kubik (Rp)
+                  </span>
+                </label>
+
+                {/* MENGGUNAKAN GAYA NATIVE DAISYUI UNTUK ICON DI DALAM INPUT */}
+                <label className="input input-bordered flex items-center gap-3 bg-gray-50 focus-within:bg-white focus-within:border-emerald-500 transition-colors overflow-hidden">
+                  <DollarSign className="h-5 w-5 text-gray-400 shrink-0" />
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    className="grow font-mono text-lg text-emerald-700 outline-none border-none bg-transparent"
+                    placeholder="0"
+                    value={tariffFormData.harga}
+                    onChange={(e) =>
+                      setTariffFormData({
+                        ...tariffFormData,
+                        harga: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="modal-action mt-8 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  className="btn border-none bg-slate-200 hover:bg-slate-300 text-slate-700 px-6"
+                  onClick={() => setIsTariffModalOpen(false)}>
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-md bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:shadow-emerald-500/30 border-none">
+                  Simpan Tarif
                 </button>
               </div>
             </form>
