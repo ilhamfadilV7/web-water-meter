@@ -78,8 +78,8 @@ export async function getDeviceData(
     pageSize: pageSize.toString(),
     deviceName: deviceName,
     productKey: "BPecljyVCy3",
-    startTimeStamp: "1775001600",
-    endTimeStamp: "1777593599",
+    startTimeStamp: startTime.toString(),
+    endTimeStamp: endTime.toString(),
     access_token: token || "",
   });
 
